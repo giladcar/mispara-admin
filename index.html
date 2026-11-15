@@ -34,7 +34,7 @@
         <div class="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center text-zinc-950 font-black text-lg">⚙</div>
         <div>
           <h1 class="text-base sm:text-lg font-black text-white leading-tight">ניהול מספרה (אדמין)</h1>
-          <p class="text-[11px] text-emerald-400">מחובר לענן בזמן אמת</p>
+          <p id="cloudStatus" class="text-[11px] text-amber-400">מתחבר לענן...</p>
         </div>
       </div>
       <div class="flex gap-2">
@@ -70,7 +70,6 @@
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
-        <!-- Calendar -->
         <section class="md:col-span-7 bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xl h-fit">
           <div class="flex items-center justify-between mb-4">
             <h2 id="adminMonthTitle" class="text-lg font-bold text-white"></h2>
@@ -85,7 +84,6 @@
           <div id="adminCalendarGrid" class="grid grid-cols-7 gap-1.5"></div>
         </section>
 
-        <!-- Day Slots Control -->
         <section class="md:col-span-5 bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col">
           <div class="mb-4 pb-3 border-b border-zinc-800 flex items-center justify-between gap-2">
             <div>
@@ -120,7 +118,7 @@
           </div>
           <div>
             <label class="block text-xs text-zinc-400 mb-1">אורך כל תור (דקות)</label>
-            <input type="number" id="intervalInput" min="5" max="240" step="5" placeholder="45" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white">
+            <input type="number" id="intervalInput" min="5" max="240" step="1" placeholder="45" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white">
           </div>
           <div>
             <label class="block text-xs text-zinc-400 mb-1">רווח בין תורים (דקות)</label>
@@ -136,7 +134,7 @@
           * דוגמה: אם שעת התחלה היא <b>15:00</b>, אורך תור <b>40</b> דקות ורווח <b>5</b> דקות — התורים יהיו ב-15:00, 15:45, 16:30 וכן הלאה. אם תגדיר מקסימום <b>5</b> תורים ביום, המערכת תציג ותאפשר עד 5 תורים בלבד באותו יום.
         </p>
 
-        <button onclick="saveGeneralSettings()" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold px-6 py-3 rounded-xl text-sm shadow-lg">
+        <button id="saveSettingsBtn" onclick="saveGeneralSettings()" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-zinc-950 font-bold px-6 py-3 rounded-xl text-sm shadow-lg">
           שמור הגדרות לכל הלקוחות ✓
         </button>
       </div>
@@ -192,11 +190,11 @@
       }
     };
 
-    function showToast(msg) {
+    function showToast(msg, isError = false) {
       const t = document.getElementById('toast');
       t.textContent = msg;
-      t.classList.remove('translate-y-24', 'opacity-0');
-      setTimeout(() => t.classList.add('translate-y-24', 'opacity-0'), 3000);
+      t.className = `fixed bottom-5 right-5 left-5 sm:left-auto sm:w-80 ${isError ? 'bg-rose-950 border-rose-500 text-rose-200' : 'bg-zinc-800 border-emerald-500/40 text-white'} border px-4 py-3 rounded-xl shadow-2xl text-sm font-medium transition-all duration-300 z-50 text-center`;
+      setTimeout(() => t.classList.add('translate-y-24', 'opacity-0'), 3500);
     }
 
     window.switchTab = function(tab) {
@@ -215,12 +213,19 @@
     };
 
     onSnapshot(doc(db, "config", "settings"), (snap) => {
+      const statusEl = document.getElementById('cloudStatus');
+      statusEl.textContent = "מחובר לענן בזמן אמת ✓";
+      statusEl.className = "text-[11px] text-emerald-400";
       if (snap.exists()) {
         settings = { ...settings, ...snap.data() };
       }
       populateSettingsUI();
       renderAdminCalendar();
       renderAdminDaySlots();
+    }, (err) => {
+      const statusEl = document.getElementById('cloudStatus');
+      statusEl.textContent = "שגיאת חיבור לענן (בדוק Rules)";
+      statusEl.className = "text-[11px] text-rose-400";
     });
 
     onSnapshot(collection(db, "appointments"), (snapshot) => {
@@ -279,19 +284,37 @@
     }
 
     window.saveGeneralSettings = async function() {
-      const checkedDays = Array.from(document.querySelectorAll('.day-cb:checked')).map(cb => Number(cb.value));
-      settings.activeDays = checkedDays;
-      settings.startTime = document.getElementById('startTimeInput').value;
-      settings.endTime = document.getElementById('endTimeInput').value;
-      settings.interval = Number(document.getElementById('intervalInput').value) || 45;
-      settings.bufferMinutes = Number(document.getElementById('bufferInput').value) || 0;
-      settings.maxAppointmentsPerDay = Number(document.getElementById('maxPerDayInput').value) || 0;
+      const btn = document.getElementById('saveSettingsBtn');
+      btn.disabled = true;
+      btn.textContent = "שומר בענן...";
 
-      await setDoc(doc(db, "config", "settings"), settings);
-      showToast("ההגדרות נשמרו ועודכנו אצל כולם!");
+      try {
+        const checkedDays = Array.from(document.querySelectorAll('.day-cb:checked')).map(cb => Number(cb.value));
+        const newSettings = {
+          ...settings,
+          activeDays: checkedDays,
+          startTime: document.getElementById('startTimeInput').value || "15:00",
+          endTime: document.getElementById('endTimeInput').value || "20:00",
+          interval: Number(document.getElementById('intervalInput').value) || 45,
+          bufferMinutes: Number(document.getElementById('bufferInput').value) || 0,
+          maxAppointmentsPerDay: Number(document.getElementById('maxPerDayInput').value) || 0,
+          updatedAt: Date.now()
+        };
+
+        await setDoc(doc(db, "config", "settings"), newSettings, { merge: true });
+        settings = newSettings;
+        renderAdminCalendar();
+        renderAdminDaySlots();
+        showToast("ההגדרות נשמרו ועודכנו אצל כולם! ✓");
+      } catch (err) {
+        console.error("Save error:", err);
+        showToast("שגיאה בשמירה! בדוק הרשאות ב-Firebase Rules", true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "שמור הגדרות לכל הלקוחות ✓";
+      }
     };
 
-    // --- Visual Admin Calendar ---
     window.changeAdminMonth = function(delta) {
       adminMonth.setMonth(adminMonth.getMonth() + delta);
       renderAdminCalendar();
@@ -422,31 +445,40 @@
     };
 
     window.toggleSelectedWholeDay = async function() {
-      settings.blockedDates = settings.blockedDates || [];
-      if (settings.blockedDates.includes(adminSelectedDate)) {
-        settings.blockedDates = settings.blockedDates.filter(d => d !== adminSelectedDate);
-        showToast(`התאריך ${adminSelectedDate} שוחרר ונפתח מחדש!`);
-      } else {
-        settings.blockedDates.push(adminSelectedDate);
-        showToast(`התאריך ${adminSelectedDate} נחסם לחלוטין!`);
+      try {
+        settings.blockedDates = settings.blockedDates || [];
+        if (settings.blockedDates.includes(adminSelectedDate)) {
+          settings.blockedDates = settings.blockedDates.filter(d => d !== adminSelectedDate);
+          await setDoc(doc(db, "config", "settings"), settings, { merge: true });
+          showToast(`התאריך ${adminSelectedDate} שוחרר ונפתח מחדש!`);
+        } else {
+          settings.blockedDates.push(adminSelectedDate);
+          await setDoc(doc(db, "config", "settings"), settings, { merge: true });
+          showToast(`התאריך ${adminSelectedDate} נחסם לחלוטין!`);
+        }
+      } catch (e) {
+        showToast("שגיאה בעדכון התאריך - בדוק הרשאות Firebase", true);
       }
-      await setDoc(doc(db, "config", "settings"), settings);
     };
 
     window.toggleAdminSlot = async function(time) {
-      const key = `${adminSelectedDate}_${time}`;
-      settings.blockedSlots = settings.blockedSlots || [];
-      if (settings.blockedSlots.includes(key)) {
-        settings.blockedSlots = settings.blockedSlots.filter(s => s !== key);
-        showToast(`השעה ${time} שוחררה ונפתחה להזמנה`);
-      } else {
-        settings.blockedSlots.push(key);
-        showToast(`השעה ${time} נחסמה מראש`);
+      try {
+        const key = `${adminSelectedDate}_${time}`;
+        settings.blockedSlots = settings.blockedSlots || [];
+        if (settings.blockedSlots.includes(key)) {
+          settings.blockedSlots = settings.blockedSlots.filter(s => s !== key);
+          await setDoc(doc(db, "config", "settings"), settings, { merge: true });
+          showToast(`השעה ${time} שוחררה ונפתחה להזמנה`);
+        } else {
+          settings.blockedSlots.push(key);
+          await setDoc(doc(db, "config", "settings"), settings, { merge: true });
+          showToast(`השעה ${time} נחסמה מראש`);
+        }
+      } catch (e) {
+        showToast("שגיאה בעדכון השעה - בדוק הרשאות Firebase", true);
       }
-      await setDoc(doc(db, "config", "settings"), settings);
     };
 
-    // --- All Appointments List ---
     window.renderAdminAppointments = function() {
       const filterDate = document.getElementById('filterDate').value;
       let list = [...appointments].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
@@ -483,8 +515,12 @@
 
     window.adminCancel = async function(id) {
       if (!confirm("לבטל את התור של הלקוח?")) return;
-      await deleteDoc(doc(db, "appointments", id));
-      showToast("התור בוטל והשעה התפנתה ביומן");
+      try {
+        await deleteDoc(doc(db, "appointments", id));
+        showToast("התור בוטל והשעה התפנתה ביומן");
+      } catch (e) {
+        showToast("שגיאה בביטול התור", true);
+      }
     };
   </script>
 </body>
