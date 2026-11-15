@@ -54,9 +54,12 @@
         <div class="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
           <div>
             <h2 class="text-base font-bold text-white">יומן תורים מוזמנים (<span id="totalCount">0</span>)</h2>
-            <p class="text-xs text-zinc-400">סנן לפי טווח זמן או הוסף תור ישירות ליומן שלך</p>
+            <p class="text-xs text-zinc-400">סנן לפי טווח זמן, שלח תזכורת בוואטסאפ או קבע תור ידנית</p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <button onclick="openManualBookingModal()" class="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs px-3.5 py-2 rounded-xl shadow-md">
+              + קבע תור ידנית
+            </button>
             <input type="date" id="filterDate" onchange="setRangeFilter('custom')" class="bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-1.5 text-xs text-white outline-none">
           </div>
         </div>
@@ -75,8 +78,11 @@
 
     <!-- TAB 2: VISUAL CALENDAR & SLOT BLOCKING -->
     <div id="calendarMgrTab" class="hidden space-y-5">
-      <div class="bg-zinc-900/80 border border-emerald-500/20 rounded-2xl p-4 text-xs text-zinc-300">
-        💡 <b>ניהול יומן חזותי:</b> דפדף בין החודשים, בחר תאריך, וחסום או שחרר יום שלם או שעות בודדות בלחיצת כפתור.
+      <div class="bg-zinc-900/80 border border-emerald-500/20 rounded-2xl p-4 text-xs text-zinc-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <span>💡 <b>ניהול יומן חזותי:</b> בחר תאריך כדי לחסום/לשחרר שעות או לקבוע תור ידנית ללקוח.</span>
+        <button onclick="openManualBookingModal(adminSelectedDate)" class="bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-xs px-3 py-1.5 rounded-xl self-start sm:self-auto">
+          + קבע תור בתאריך הנבחר
+        </button>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -165,11 +171,62 @@
 
   </main>
 
+  <!-- Manual Booking Modal -->
+  <div id="manualModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-zinc-900 border border-zinc-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-zinc-800 pb-3">
+        <div>
+          <h3 class="text-lg font-black text-white">קביעת תור ידנית ללקוח</h3>
+          <p class="text-[11px] text-zinc-400">התור יישמר מיד ביומן ויחסום את השעה אצל שאר הלקוחות</p>
+        </div>
+        <button onclick="closeManualBookingModal()" class="text-zinc-400 hover:text-white text-xl">✕</button>
+      </div>
+
+      <form onsubmit="submitManualBooking(event)" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-zinc-300 mb-1">תאריך *</label>
+            <input type="date" id="manDate" required onchange="refreshManualSlots()" class="w-full bg-zinc-950 border border-zinc-700 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-xs text-zinc-300 mb-1">סוג טיפול *</label>
+            <select id="manService" onchange="refreshManualSlots()" class="w-full bg-zinc-950 border border-zinc-700 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none"></select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-zinc-300 mb-1">שעה פנויה *</label>
+          <select id="manTime" required class="w-full bg-zinc-950 border border-zinc-700 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none"></select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs text-zinc-300 mb-1">שם פרטי *</label>
+            <input type="text" id="manFirst" required placeholder="שם פרטי" class="w-full bg-zinc-950 border border-zinc-700 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none">
+          </div>
+          <div>
+            <label class="block text-xs text-zinc-300 mb-1">שם משפחה *</label>
+            <input type="text" id="manLast" required placeholder="שם משפחה" class="w-full bg-zinc-950 border border-zinc-700 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-zinc-300 mb-1">טלפון (לשיחה / וואטסאפ) *</label>
+          <input type="tel" id="manPhone" required placeholder="050-0000000" class="w-full bg-zinc-950 border border-zinc-700 focus:border-emerald-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none text-left" dir="ltr">
+        </div>
+
+        <button type="submit" id="manSubmitBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold py-3 rounded-xl text-sm shadow-lg mt-2">
+          שמור תור ביומן ✓
+        </button>
+      </form>
+    </div>
+  </div>
+
   <div id="toast" class="fixed bottom-5 right-5 left-5 sm:left-auto sm:w-80 bg-zinc-800 border border-emerald-500/40 text-white px-4 py-3 rounded-xl shadow-2xl text-sm font-medium transform translate-y-24 opacity-0 transition-all duration-300 z-50 text-center"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, setDoc, collection, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, collection, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCN3-QXjz-6u8ynxjN8END8kEKuxXBF43U",
@@ -354,6 +411,113 @@
       return slots;
     }
 
+    // --- Manual Booking Modal Logic ---
+    window.openManualBookingModal = function(preselectedDate = null, preselectedTime = null) {
+      const dateInput = document.getElementById('manDate');
+      dateInput.value = preselectedDate || formatDate(new Date());
+
+      const srvSelect = document.getElementById('manService');
+      srvSelect.innerHTML = settings.services.map(s =>
+        `<option value="${s.id}">${s.name} (${s.duration} דק' • ₪${s.price})</option>`
+      ).join('');
+
+      document.getElementById('manFirst').value = '';
+      document.getElementById('manLast').value = '';
+      document.getElementById('manPhone').value = '';
+
+      refreshManualSlots(preselectedTime);
+      document.getElementById('manualModal').classList.remove('hidden');
+    };
+
+    window.closeManualBookingModal = function() {
+      document.getElementById('manualModal').classList.add('hidden');
+    };
+
+    window.refreshManualSlots = function(preferredTime = null) {
+      const dateStr = document.getElementById('manDate').value;
+      const srvId = document.getElementById('manService').value;
+      const timeSelect = document.getElementById('manTime');
+      if (!dateStr) return;
+
+      const d = new Date(dateStr + 'T00:00:00');
+      const rule = getDayRule(d.getDay());
+      const srv = settings.services.find(s => s.id === srvId) || settings.services[0];
+      const srvDuration = Number(srv?.duration) || Number(rule.interval) || 30;
+
+      const isDateBlocked = (settings.blockedDates || []).includes(dateStr);
+      if (!rule.enabled || isDateBlocked) {
+        timeSelect.innerHTML = `<option value="">היום סגור או חסום</option>`;
+        return;
+      }
+
+      const slots = generateTimeSlotsForDate(dateStr);
+      const closeMins = timeToMins(rule.endTime);
+
+      const freeSlots = slots.filter(t => {
+        const startMins = timeToMins(t);
+        if (startMins + srvDuration > closeMins) return false;
+        if (isSlotOccupiedByApp(dateStr, startMins, srvDuration)) return false;
+        const isBlocked = (settings.blockedSlots || []).includes(`${dateStr}_${t}`);
+        return !isBlocked;
+      });
+
+      if (freeSlots.length === 0) {
+        timeSelect.innerHTML = `<option value="">אין שעות פנויות בתאריך זה</option>`;
+        return;
+      }
+
+      timeSelect.innerHTML = freeSlots.map(t =>
+        `<option value="${t}" ${t === preferredTime ? 'selected' : ''}>${t}</option>`
+      ).join('');
+    };
+
+    window.submitManualBooking = async function(e) {
+      e.preventDefault();
+      const dateStr = document.getElementById('manDate').value;
+      const timeStr = document.getElementById('manTime').value;
+      const srvId = document.getElementById('manService').value;
+      const firstName = document.getElementById('manFirst').value.trim();
+      const lastName = document.getElementById('manLast').value.trim();
+      const phone = document.getElementById('manPhone').value.trim();
+
+      if (!dateStr || !timeStr) {
+        showToast("נא לבחור תאריך ושעה פנויה", true);
+        return;
+      }
+
+      const srv = settings.services.find(s => s.id === srvId) || settings.services[0];
+      const btn = document.getElementById('manSubmitBtn');
+      btn.disabled = true;
+      btn.textContent = "שומר...";
+
+      try {
+        await addDoc(collection(db, "appointments"), {
+          userEmail: "manual-admin@mispara.local",
+          date: dateStr,
+          time: timeStr,
+          firstName,
+          lastName,
+          phone,
+          serviceId: srv.id,
+          serviceName: srv.name,
+          servicePrice: srv.price,
+          serviceDuration: srv.duration,
+          bookedByAdmin: true,
+          createdAt: Date.now()
+        });
+
+        closeManualBookingModal();
+        showToast(`התור עבור ${firstName} ${lastName} נקבע בהצלחה! ✓`);
+      } catch (err) {
+        console.error(err);
+        showToast("שגיאה בקביעת התור הידני", true);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "שמור תור ביומן ✓";
+      }
+    };
+
+    // --- Services & Settings UI ---
     function renderServicesEditor() {
       const container = document.getElementById('servicesEditor');
       container.innerHTML = settings.services.map((srv, idx) => `
@@ -637,7 +801,7 @@
         return;
       }
 
-      let html = `<p class="text-[11px] text-zinc-400 mb-3">לחץ על שעה כדי לחסום אותה מראש או לשחרר שעה חסומה:</p><div class="grid grid-cols-2 sm:grid-cols-3 gap-2">`;
+      let html = `<p class="text-[11px] text-zinc-400 mb-3">לחץ על שעה פתוחה לחסימה, או על "+" לקביעת תור ידני:</p><div class="grid grid-cols-2 sm:grid-cols-3 gap-2">`;
 
       slots.forEach(time => {
         const key = `${adminSelectedDate}_${time}`;
@@ -661,10 +825,15 @@
           `;
         } else {
           html += `
-            <button onclick="toggleAdminSlot('${time}')" class="p-2 rounded-xl bg-zinc-950 hover:bg-rose-500/20 border border-zinc-800 hover:border-rose-500/50 text-center transition">
-              <div class="text-xs font-bold text-emerald-400">${time}</div>
-              <div class="text-[10px] text-zinc-400">פתוח (חסום)</div>
-            </button>
+            <div class="p-1.5 rounded-xl bg-zinc-950 border border-zinc-800 flex flex-col items-center justify-between gap-1">
+              <button onclick="toggleAdminSlot('${time}')" class="w-full text-center hover:text-rose-400 transition">
+                <div class="text-xs font-bold text-emerald-400">${time}</div>
+                <div class="text-[9px] text-zinc-500">לחץ לחסימה</div>
+              </button>
+              <button onclick="openManualBookingModal('${adminSelectedDate}', '${time}')" class="w-full bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-zinc-950 text-[10px] font-bold py-0.5 rounded-md transition">
+                + קבע תור
+              </button>
+            </div>
           `;
         }
       });
@@ -708,6 +877,20 @@
       }
     };
 
+    // --- WhatsApp Reminder Link Builder ---
+    function buildWhatsAppUrl(app) {
+      const cleanDigits = (app.phone || '').replace(/\D/g, '');
+      const intlPhone = cleanDigits.startsWith('0') ? '972' + cleanDigits.slice(1) : cleanDigits;
+      const d = new Date(app.date + 'T00:00:00');
+      const dayName = daysHe[d.getDay()];
+      const dateLabel = `${d.getDate()}/${d.getMonth() + 1}`;
+      const srvLabel = app.serviceName || 'תספורת';
+
+      const msg = `היי ${app.firstName}, תזכורת לתור שלך במספרה (${srvLabel}) ביום ${dayName} ${dateLabel} בשעה ${app.time} ✂`;
+      return `https://wa.me/${intlPhone}?text=${encodeURIComponent(msg)}`;
+    }
+
+    // --- Google Calendar Link Builder ---
     function buildGoogleCalendarUrl(app) {
       const d = new Date(app.date + 'T00:00:00');
       const rule = getDayRule(d.getDay());
@@ -790,26 +973,38 @@
       container.innerHTML = list.map(app => {
         const d = new Date(app.date + 'T00:00:00');
         const calUrl = buildGoogleCalendarUrl(app);
+        const waUrl = buildWhatsAppUrl(app);
         const srvBadge = app.serviceName
           ? `<span class="bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[11px] font-bold px-2 py-0.5 rounded-md">${app.serviceName}${app.servicePrice ? ` • ₪${app.servicePrice}` : ''}</span>`
           : '';
+        const manualBadge = app.bookedByAdmin
+          ? `<span class="bg-sky-500/15 text-sky-300 border border-sky-500/30 text-[10px] font-bold px-2 py-0.5 rounded-md">ידני</span>`
+          : '';
+
         return `
-          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold px-2.5 py-0.5 rounded-lg">${app.time}</span>
-                <span class="text-sm font-bold text-white">יום ${daysHe[d.getDay()]}, ${d.getDate()}/${d.getMonth() + 1}</span>
-                ${srvBadge}
+          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold px-2.5 py-0.5 rounded-lg">${app.time}</span>
+                  <span class="text-sm font-bold text-white">יום ${daysHe[d.getDay()]}, ${d.getDate()}/${d.getMonth() + 1}</span>
+                  ${srvBadge}
+                  ${manualBadge}
+                </div>
+                <p class="text-base font-bold text-zinc-200 mt-2">${app.firstName} ${app.lastName}</p>
+                <a href="tel:${app.phone}" class="text-xs text-amber-400 hover:underline mt-0.5 inline-block" dir="ltr">📞 ${app.phone}</a>
               </div>
-              <p class="text-base font-bold text-zinc-200 mt-2">${app.firstName} ${app.lastName}</p>
-              <a href="tel:${app.phone}" class="text-xs text-amber-400 hover:underline mt-0.5 inline-block" dir="ltr">📞 ${app.phone}</a>
             </div>
-            <div class="flex items-center gap-2 self-end sm:self-center">
-              <a href="${calUrl}" target="_blank" rel="noopener noreferrer" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-amber-500/30 text-xs font-bold px-3 py-2.5 rounded-xl">
-                הוסף ליומן 📅
+
+            <div class="flex flex-wrap items-center gap-2 pt-2.5 border-t border-zinc-800/80">
+              <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="flex-1 text-center bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 text-xs font-bold px-3 py-2 rounded-xl transition">
+                וואטסאפ 💬
               </a>
-              <button onclick="adminCancel('${app.id}')" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-md">
-                בטל תור
+              <a href="${calUrl}" target="_blank" rel="noopener noreferrer" class="flex-1 text-center bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-amber-500/30 text-xs font-bold px-3 py-2 rounded-xl transition">
+                יומן 📅
+              </a>
+              <button onclick="adminCancel('${app.id}')" class="bg-rose-500/15 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-xs font-bold px-3 py-2 rounded-xl transition">
+                בטל
               </button>
             </div>
           </div>
