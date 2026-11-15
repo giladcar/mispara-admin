@@ -29,7 +29,7 @@
 
   <!-- Header -->
   <header class="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-30">
-    <div class="max-w-5xl mx-auto px-4 py-3.5 flex items-center justify-between">
+    <div class="max-w-5xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-2">
       <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center text-zinc-950 font-black text-lg">⚙</div>
         <div>
@@ -37,10 +37,11 @@
           <p id="cloudStatus" class="text-[11px] text-amber-400">מתחבר לענן...</p>
         </div>
       </div>
-      <div class="flex gap-2">
+      <div class="flex flex-wrap gap-1.5 sm:gap-2">
         <button onclick="switchTab('appointments')" id="tabAppBtn" class="bg-emerald-500 text-zinc-950 font-bold text-xs px-3 py-2 rounded-xl">כל התורים</button>
         <button onclick="switchTab('calendarMgr')" id="tabCalBtn" class="bg-zinc-800 text-zinc-300 font-bold text-xs px-3 py-2 rounded-xl">יומן וחסימות</button>
         <button onclick="switchTab('settings')" id="tabSetBtn" class="bg-zinc-800 text-zinc-300 font-bold text-xs px-3 py-2 rounded-xl">הגדרות שעות</button>
+        <button onclick="logoutAdmin()" class="bg-zinc-800 hover:bg-rose-500/20 hover:text-rose-300 text-zinc-400 font-bold text-xs px-3 py-2 rounded-xl">יציאה</button>
       </div>
     </div>
   </header>
@@ -49,14 +50,24 @@
     
     <!-- TAB 1: ALL APPOINTMENTS -->
     <div id="appointmentsTab" class="space-y-4">
-      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col sm:flex-row gap-3 justify-between items-center">
-        <div>
-          <h2 class="text-base font-bold text-white">יומן תורים מוזמנים (<span id="totalCount">0</span>)</h2>
-          <p class="text-xs text-zinc-400">כאן מופיעים כל התורים של כל הלקוחות בזמן אמת</p>
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 space-y-3">
+        <div class="flex flex-col sm:flex-row gap-3 justify-between items-start sm:items-center">
+          <div>
+            <h2 class="text-base font-bold text-white">יומן תורים מוזמנים (<span id="totalCount">0</span>)</h2>
+            <p class="text-xs text-zinc-400">סנן לפי טווח זמן או הוסף תור ישירות ליומן שלך</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="date" id="filterDate" onchange="setRangeFilter('custom')" class="bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-1.5 text-xs text-white outline-none">
+          </div>
         </div>
-        <div class="flex gap-2 w-full sm:w-auto">
-          <input type="date" id="filterDate" onchange="renderAdminAppointments()" class="bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2 text-xs text-white outline-none">
-          <button onclick="document.getElementById('filterDate').value=''; renderAdminAppointments();" class="bg-zinc-800 hover:bg-zinc-700 text-xs px-3 py-2 rounded-xl text-zinc-300">הכל</button>
+
+        <!-- Range Filter Buttons -->
+        <div class="flex flex-wrap gap-1.5 pt-2 border-t border-zinc-800">
+          <button onclick="setRangeFilter('all')" id="flt-all" class="bg-emerald-500 text-zinc-950 font-bold text-xs px-3 py-1.5 rounded-lg">הכל</button>
+          <button onclick="setRangeFilter('today')" id="flt-today" class="bg-zinc-800 text-zinc-300 font-bold text-xs px-3 py-1.5 rounded-lg">היום</button>
+          <button onclick="setRangeFilter('thisWeek')" id="flt-thisWeek" class="bg-zinc-800 text-zinc-300 font-bold text-xs px-3 py-1.5 rounded-lg">השבוע</button>
+          <button onclick="setRangeFilter('nextWeek')" id="flt-nextWeek" class="bg-zinc-800 text-zinc-300 font-bold text-xs px-3 py-1.5 rounded-lg">שבוע הבא</button>
+          <button onclick="setRangeFilter('thisMonth')" id="flt-thisMonth" class="bg-zinc-800 text-zinc-300 font-bold text-xs px-3 py-1.5 rounded-lg">החודש הזה</button>
         </div>
       </div>
 
@@ -66,14 +77,15 @@
     <!-- TAB 2: VISUAL CALENDAR & SLOT BLOCKING -->
     <div id="calendarMgrTab" class="hidden space-y-5">
       <div class="bg-zinc-900/80 border border-emerald-500/20 rounded-2xl p-4 text-xs text-zinc-300">
-        💡 <b>ניהול יומן חזותי:</b> דפדף בין החודשים, בחר תאריך, וחסום או שחרר יום שלם או שעות בודדות בלחיצת כפתור. השעות החסומות יוסרו מיד מיומן הלקוחות.
+        💡 <b>ניהול יומן חזותי:</b> דפדף בין החודשים, בחר תאריך, וחסום או שחרר יום שלם או שעות בודדות בלחיצת כפתור.
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
         <section class="md:col-span-7 bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-5 shadow-xl h-fit">
           <div class="flex items-center justify-between mb-4">
             <h2 id="adminMonthTitle" class="text-lg font-bold text-white"></h2>
-            <div class="flex gap-1.5">
+            <div class="flex items-center gap-1.5">
+              <button onclick="goToAdminToday()" class="px-3 h-9 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-400 text-xs font-bold">היום</button>
               <button onclick="changeAdminMonth(-1)" class="w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300">❯</button>
               <button onclick="changeAdminMonth(1)" class="w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300">❮</button>
             </div>
@@ -97,42 +109,20 @@
       </div>
     </div>
 
-    <!-- TAB 3: GENERAL SCHEDULE & RULES -->
+    <!-- TAB 3: GENERAL & PER-DAY SCHEDULE RULES -->
     <div id="settingsTab" class="hidden space-y-6">
       <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-5">
-        <h2 class="text-lg font-bold text-white border-b border-zinc-800 pb-3">הגדרות שעות, רווחים ומכסת תורים יומית</h2>
-        
-        <div>
-          <label class="block text-xs font-bold text-zinc-300 mb-2">בחר ימים פתוחים בשבוע (יום לא מסומן = סגור):</label>
-          <div class="grid grid-cols-4 sm:grid-cols-7 gap-2" id="daysCheckboxes"></div>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-3">
+          <div>
+            <h2 class="text-lg font-bold text-white">הגדרות שעות קבועות לפי ימי השבוע</h2>
+            <p class="text-xs text-zinc-400">תוכל להגדיר שעות, אורך תור ומכסה שונה לכל יום בשבוע (למשל יום ראשון ויום שישי)</p>
+          </div>
+          <button onclick="applyFirstDayToAll()" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 text-xs font-bold px-3 py-2 rounded-xl border border-amber-500/20">
+            העתק הגדרות יום א' לכל הימים הפעילים
+          </button>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div>
-            <label class="block text-xs text-zinc-400 mb-1">שעת התחלה</label>
-            <input type="time" id="startTimeInput" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white">
-          </div>
-          <div>
-            <label class="block text-xs text-zinc-400 mb-1">שעת סיום</label>
-            <input type="time" id="endTimeInput" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white">
-          </div>
-          <div>
-            <label class="block text-xs text-zinc-400 mb-1">אורך כל תור (דקות)</label>
-            <input type="number" id="intervalInput" min="5" max="240" step="1" placeholder="45" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white">
-          </div>
-          <div>
-            <label class="block text-xs text-zinc-400 mb-1">רווח בין תורים (דקות)</label>
-            <input type="number" id="bufferInput" min="0" max="120" step="1" placeholder="5" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white">
-          </div>
-          <div>
-            <label class="block text-xs text-zinc-400 mb-1">מקסימום תורים ביום</label>
-            <input type="number" id="maxPerDayInput" min="0" max="100" step="1" placeholder="0 = ללא הגבלה" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white">
-          </div>
-        </div>
-
-        <p class="text-[11px] text-zinc-400">
-          * דוגמה: אם שעת התחלה היא <b>15:00</b>, אורך תור <b>40</b> דקות ורווח <b>5</b> דקות — התורים יהיו ב-15:00, 15:45, 16:30 וכן הלאה. אם תגדיר מקסימום <b>5</b> תורים ביום, המערכת תציג ותאפשר עד 5 תורים בלבד באותו יום.
-        </p>
+        <div id="weeklyScheduleEditor" class="space-y-2.5"></div>
 
         <button id="saveSettingsBtn" onclick="saveGeneralSettings()" class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-zinc-950 font-bold px-6 py-3 rounded-xl text-sm shadow-lg">
           שמור הגדרות לכל הלקוחות ✓
@@ -162,6 +152,21 @@
     const daysHe = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
     const monthsHe = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
 
+    function buildDefaultWeeklyRules(base) {
+      const rules = {};
+      for (let i = 0; i < 7; i++) {
+        rules[i] = {
+          enabled: (base.activeDays || [0, 1, 2, 3, 4, 5]).includes(i),
+          startTime: base.startTime || "15:00",
+          endTime: base.endTime || "20:00",
+          interval: Number(base.interval) || 45,
+          bufferMinutes: Number(base.bufferMinutes) || 0,
+          maxAppointmentsPerDay: Number(base.maxAppointmentsPerDay) || 0
+        };
+      }
+      return rules;
+    }
+
     let settings = {
       activeDays: [0, 1, 2, 3, 4, 5],
       startTime: "15:00",
@@ -169,13 +174,17 @@
       interval: 45,
       bufferMinutes: 0,
       maxAppointmentsPerDay: 0,
+      weeklyRules: null,
       blockedDates: [],
       blockedSlots: []
     };
+    settings.weeklyRules = buildDefaultWeeklyRules(settings);
+
     let appointments = [];
     let adminMonth = new Date();
     adminMonth.setDate(1);
     let adminSelectedDate = formatDate(new Date());
+    let currentRangeFilter = 'all';
 
     function formatDate(d) {
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -188,6 +197,12 @@
       } else {
         alert("קוד שגוי");
       }
+    };
+
+    window.logoutAdmin = function() {
+      if (!confirm("האם אתה בטוח שברצונך להתנתק מניהול האדמין?")) return;
+      document.getElementById('pinInput').value = '';
+      document.getElementById('lockScreen').classList.remove('hidden');
     };
 
     function showToast(msg, isError = false) {
@@ -217,12 +232,16 @@
       statusEl.textContent = "מחובר לענן בזמן אמת ✓";
       statusEl.className = "text-[11px] text-emerald-400";
       if (snap.exists()) {
-        settings = { ...settings, ...snap.data() };
+        const data = snap.data();
+        settings = { ...settings, ...data };
+        if (!data.weeklyRules) {
+          settings.weeklyRules = buildDefaultWeeklyRules(settings);
+        }
       }
       populateSettingsUI();
       renderAdminCalendar();
       renderAdminDaySlots();
-    }, (err) => {
+    }, () => {
       const statusEl = document.getElementById('cloudStatus');
       statusEl.textContent = "שגיאת חיבור לענן (בדוק Rules)";
       statusEl.className = "text-[11px] text-rose-400";
@@ -235,14 +254,32 @@
       renderAdminDaySlots();
     });
 
-    function generateTimeSlots() {
-      const [startH, startM] = settings.startTime.split(':').map(Number);
-      const [endH, endM] = settings.endTime.split(':').map(Number);
+    function getDayRule(dayIndex) {
+      if (settings.weeklyRules && settings.weeklyRules[dayIndex]) {
+        return settings.weeklyRules[dayIndex];
+      }
+      return {
+        enabled: (settings.activeDays || []).includes(dayIndex),
+        startTime: settings.startTime || "15:00",
+        endTime: settings.endTime || "20:00",
+        interval: Number(settings.interval) || 45,
+        bufferMinutes: Number(settings.bufferMinutes) || 0,
+        maxAppointmentsPerDay: Number(settings.maxAppointmentsPerDay) || 0
+      };
+    }
+
+    function generateTimeSlotsForDate(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      const rule = getDayRule(d.getDay());
+      if (!rule.enabled) return [];
+
+      const [startH, startM] = rule.startTime.split(':').map(Number);
+      const [endH, endM] = rule.endTime.split(':').map(Number);
       let current = startH * 60 + startM;
       const end = endH * 60 + endM;
-      const duration = Number(settings.interval) || 45;
-      const buffer = Number(settings.bufferMinutes) || 0;
-      const maxPerDay = Number(settings.maxAppointmentsPerDay) || 0;
+      const duration = Number(rule.interval) || 45;
+      const buffer = Number(rule.bufferMinutes) || 0;
+      const maxPerDay = Number(rule.maxAppointmentsPerDay) || 0;
 
       const slots = [];
       while (current + duration <= end) {
@@ -256,32 +293,68 @@
     }
 
     function populateSettingsUI() {
-      const daysDiv = document.getElementById('daysCheckboxes');
-      daysDiv.innerHTML = daysHe.map((name, idx) => {
-        const active = settings.activeDays.includes(idx);
+      const container = document.getElementById('weeklyScheduleEditor');
+      container.innerHTML = daysHe.map((name, idx) => {
+        const r = getDayRule(idx);
         return `
-          <label class="cursor-pointer border rounded-xl p-2.5 text-center text-xs font-bold transition ${active ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300' : 'bg-zinc-950 border-zinc-800 text-zinc-500'}">
-            <input type="checkbox" value="${idx}" ${active ? 'checked' : ''} class="hidden day-cb">
-            יום ${name}
-          </label>
+          <div class="bg-zinc-950 border ${r.enabled ? 'border-emerald-500/30' : 'border-zinc-800/80 opacity-60'} rounded-xl p-3.5 transition">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
+              <div class="lg:col-span-2 flex items-center gap-2.5">
+                <input type="checkbox" id="day-en-${idx}" ${r.enabled ? 'checked' : ''} onchange="toggleDayRowUI(${idx})" class="w-4 h-4 accent-emerald-500 cursor-pointer">
+                <label for="day-en-${idx}" class="font-bold text-sm text-white cursor-pointer">יום ${name}</label>
+              </div>
+              <div class="lg:col-span-10 grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">התחלה</label>
+                  <input type="time" id="day-start-${idx}" value="${r.startTime}" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">סיום</label>
+                  <input type="time" id="day-end-${idx}" value="${r.endTime}" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">אורך תור (דק')</label>
+                  <input type="number" id="day-int-${idx}" value="${r.interval}" min="5" max="240" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">רווח (דק')</label>
+                  <input type="number" id="day-buf-${idx}" value="${r.bufferMinutes}" min="0" max="120" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">מקס' תורים</label>
+                  <input type="number" id="day-max-${idx}" value="${r.maxAppointmentsPerDay}" min="0" max="100" placeholder="0 = ללא" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+                </div>
+              </div>
+            </div>
+          </div>
         `;
       }).join('');
-
-      document.querySelectorAll('.day-cb').forEach(cb => {
-        cb.addEventListener('change', (e) => {
-          const lbl = e.target.parentElement;
-          lbl.className = e.target.checked
-            ? 'cursor-pointer border rounded-xl p-2.5 text-center text-xs font-bold transition bg-emerald-500/20 border-emerald-500 text-emerald-300'
-            : 'cursor-pointer border rounded-xl p-2.5 text-center text-xs font-bold transition bg-zinc-950 border-zinc-800 text-zinc-500';
-        });
-      });
-
-      document.getElementById('startTimeInput').value = settings.startTime;
-      document.getElementById('endTimeInput').value = settings.endTime;
-      document.getElementById('intervalInput').value = settings.interval;
-      document.getElementById('bufferInput').value = settings.bufferMinutes || 0;
-      document.getElementById('maxPerDayInput').value = settings.maxAppointmentsPerDay || 0;
     }
+
+    window.toggleDayRowUI = function(idx) {
+      const cb = document.getElementById(`day-en-${idx}`);
+      const card = cb.closest('div.bg-zinc-950');
+      card.className = `bg-zinc-950 border ${cb.checked ? 'border-emerald-500/30' : 'border-zinc-800/80 opacity-60'} rounded-xl p-3.5 transition`;
+    };
+
+    window.applyFirstDayToAll = function() {
+      const start = document.getElementById('day-start-0').value;
+      const end = document.getElementById('day-end-0').value;
+      const intv = document.getElementById('day-int-0').value;
+      const buf = document.getElementById('day-buf-0').value;
+      const max = document.getElementById('day-max-0').value;
+
+      for (let i = 1; i < 7; i++) {
+        if (document.getElementById(`day-en-${i}`).checked) {
+          document.getElementById(`day-start-${i}`).value = start;
+          document.getElementById(`day-end-${i}`).value = end;
+          document.getElementById(`day-int-${i}`).value = intv;
+          document.getElementById(`day-buf-${i}`).value = buf;
+          document.getElementById(`day-max-${i}`).value = max;
+        }
+      }
+      showToast("הגדרות יום ראשון הועתקו לכל הימים הפעילים (לחץ שמור לאישור)");
+    };
 
     window.saveGeneralSettings = async function() {
       const btn = document.getElementById('saveSettingsBtn');
@@ -289,15 +362,32 @@
       btn.textContent = "שומר בענן...";
 
       try {
-        const checkedDays = Array.from(document.querySelectorAll('.day-cb:checked')).map(cb => Number(cb.value));
+        const weeklyRules = {};
+        const activeDays = [];
+
+        for (let i = 0; i < 7; i++) {
+          const enabled = document.getElementById(`day-en-${i}`).checked;
+          if (enabled) activeDays.push(i);
+          weeklyRules[i] = {
+            enabled,
+            startTime: document.getElementById(`day-start-${i}`).value || "15:00",
+            endTime: document.getElementById(`day-end-${i}`).value || "20:00",
+            interval: Number(document.getElementById(`day-int-${i}`).value) || 45,
+            bufferMinutes: Number(document.getElementById(`day-buf-${i}`).value) || 0,
+            maxAppointmentsPerDay: Number(document.getElementById(`day-max-${i}`).value) || 0
+          };
+        }
+
+        const firstRule = weeklyRules[activeDays[0] ?? 0];
         const newSettings = {
           ...settings,
-          activeDays: checkedDays,
-          startTime: document.getElementById('startTimeInput').value || "15:00",
-          endTime: document.getElementById('endTimeInput').value || "20:00",
-          interval: Number(document.getElementById('intervalInput').value) || 45,
-          bufferMinutes: Number(document.getElementById('bufferInput').value) || 0,
-          maxAppointmentsPerDay: Number(document.getElementById('maxPerDayInput').value) || 0,
+          activeDays,
+          startTime: firstRule.startTime,
+          endTime: firstRule.endTime,
+          interval: firstRule.interval,
+          bufferMinutes: firstRule.bufferMinutes,
+          maxAppointmentsPerDay: firstRule.maxAppointmentsPerDay,
+          weeklyRules,
           updatedAt: Date.now()
         };
 
@@ -305,7 +395,7 @@
         settings = newSettings;
         renderAdminCalendar();
         renderAdminDaySlots();
-        showToast("ההגדרות נשמרו ועודכנו אצל כולם! ✓");
+        showToast("הגדרות כל ימי השבוע נשמרו ועודכנו אצל כולם! ✓");
       } catch (err) {
         console.error("Save error:", err);
         showToast("שגיאה בשמירה! בדוק הרשאות ב-Firebase Rules", true);
@@ -313,6 +403,15 @@
         btn.disabled = false;
         btn.textContent = "שמור הגדרות לכל הלקוחות ✓";
       }
+    };
+
+    // --- Calendar Controls ---
+    window.goToAdminToday = function() {
+      const now = new Date();
+      adminSelectedDate = formatDate(now);
+      adminMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      renderAdminCalendar();
+      renderAdminDaySlots();
     };
 
     window.changeAdminMonth = function(delta) {
@@ -333,18 +432,18 @@
       const daysInMonth = new Date(year, month + 1, 0).getDate();
       for (let i = 0; i < firstDayIndex; i++) grid.innerHTML += `<div></div>`;
 
-      const allSlots = generateTimeSlots();
-
       for (let day = 1; day <= daysInMonth; day++) {
         const dObj = new Date(year, month, day);
         const dateStr = formatDate(dObj);
         const isSelected = dateStr === adminSelectedDate;
-        const isWeeklyClosed = !settings.activeDays.includes(dObj.getDay());
+        const rule = getDayRule(dObj.getDay());
+        const isWeeklyClosed = !rule.enabled;
         const isDateBlocked = (settings.blockedDates || []).includes(dateStr);
 
+        const daySlots = generateTimeSlotsForDate(dateStr);
         const takenCount = appointments.filter(a => a.date === dateStr).length;
         const blockedSlotsCount = (settings.blockedSlots || []).filter(s => s.startsWith(dateStr + '_')).length;
-        const freeCount = (isWeeklyClosed || isDateBlocked) ? 0 : Math.max(0, allSlots.length - takenCount - blockedSlotsCount);
+        const freeCount = (isWeeklyClosed || isDateBlocked) ? 0 : Math.max(0, daySlots.length - takenCount - blockedSlotsCount);
 
         const btn = document.createElement('button');
         btn.className = `aspect-square rounded-xl flex flex-col items-center justify-center relative transition border ${
@@ -361,7 +460,7 @@
         if (isDateBlocked) {
           btn.innerHTML += `<span class="text-[8px] mt-0.5 ${isSelected ? 'text-zinc-950 font-bold' : 'text-rose-400'}">חסום</span>`;
         } else if (!isWeeklyClosed) {
-          btn.innerHTML += `<span class="text-[8px] mt-0.5 ${isSelected ? 'text-zinc-950 font-bold' : 'text-emerald-400'}">${freeCount}/${allSlots.length}</span>`;
+          btn.innerHTML += `<span class="text-[8px] mt-0.5 ${isSelected ? 'text-zinc-950 font-bold' : 'text-emerald-400'}">${freeCount}/${daySlots.length}</span>`;
         }
 
         btn.onclick = () => {
@@ -383,7 +482,7 @@
       label.textContent = `יום ${daysHe[d.getDay()]}, ${d.getDate()} ב${monthsHe[d.getMonth()]}`;
 
       const isDateBlocked = (settings.blockedDates || []).includes(adminSelectedDate);
-      const isWeeklyClosed = !settings.activeDays.includes(d.getDay());
+      const rule = getDayRule(d.getDay());
 
       if (isDateBlocked) {
         wholeBtn.textContent = "שחרר יום שלם ✓";
@@ -393,7 +492,7 @@
         wholeBtn.className = "bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold px-3 py-2 rounded-xl";
       }
 
-      if (isWeeklyClosed) {
+      if (!rule.enabled) {
         container.innerHTML = `<div class="text-center py-8 text-zinc-500 text-xs">יום ${daysHe[d.getDay()]} מוגדר כיום סגור קבוע בהגדרות השעות.</div>`;
         return;
       }
@@ -403,9 +502,9 @@
         return;
       }
 
-      const slots = generateTimeSlots();
+      const slots = generateTimeSlotsForDate(adminSelectedDate);
       if (slots.length === 0) {
-        container.innerHTML = `<div class="text-center py-8 text-zinc-500 text-xs">לא הוגדרו שעות פעילות</div>`;
+        container.innerHTML = `<div class="text-center py-8 text-zinc-500 text-xs">לא הוגדרו שעות פעילות ליום זה</div>`;
         return;
       }
 
@@ -420,21 +519,21 @@
           html += `
             <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center">
               <div class="text-xs font-bold text-amber-400">${time}</div>
-              <div class="text-[10px] text-zinc-300 truncate">${bookedApp.firstName}</div>
+              <div class="text-[10px] text-zinc-300 truncate">${bookedApp.firstName} ${bookedApp.lastName}</div>
             </div>
           `;
         } else if (isBlocked) {
           html += `
             <button onclick="toggleAdminSlot('${time}')" class="p-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-center transition">
               <div class="text-xs font-bold text-rose-300 line-through">${time}</div>
-              <div class="text-[10px] text-rose-400 font-bold">חסום (לחץ לשחרור)</div>
+              <div class="text-[10px] text-rose-400 font-bold">חסום (שחרר)</div>
             </button>
           `;
         } else {
           html += `
             <button onclick="toggleAdminSlot('${time}')" class="p-2 rounded-xl bg-zinc-950 hover:bg-rose-500/20 border border-zinc-800 hover:border-rose-500/50 text-center transition">
               <div class="text-xs font-bold text-emerald-400">${time}</div>
-              <div class="text-[10px] text-zinc-400">פתוח (לחץ לחסימה)</div>
+              <div class="text-[10px] text-zinc-400">פתוח (חסום)</div>
             </button>
           `;
         }
@@ -456,7 +555,7 @@
           await setDoc(doc(db, "config", "settings"), settings, { merge: true });
           showToast(`התאריך ${adminSelectedDate} נחסם לחלוטין!`);
         }
-      } catch (e) {
+      } catch {
         showToast("שגיאה בעדכון התאריך - בדוק הרשאות Firebase", true);
       }
     };
@@ -474,29 +573,99 @@
           await setDoc(doc(db, "config", "settings"), settings, { merge: true });
           showToast(`השעה ${time} נחסמה מראש`);
         }
-      } catch (e) {
+      } catch {
         showToast("שגיאה בעדכון השעה - בדוק הרשאות Firebase", true);
       }
     };
 
-    window.renderAdminAppointments = function() {
-      const filterDate = document.getElementById('filterDate').value;
-      let list = [...appointments].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
-      if (filterDate) {
-        list = list.filter(a => a.date === filterDate);
+    // --- Google Calendar Link Builder ---
+    function buildGoogleCalendarUrl(app) {
+      const d = new Date(app.date + 'T00:00:00');
+      const rule = getDayRule(d.getDay());
+      const duration = Number(rule.interval) || 45;
+
+      const [h, m] = app.time.split(':').map(Number);
+      const startTotal = h * 60 + m;
+      const endTotal = startTotal + duration;
+
+      const dateClean = app.date.replace(/-/g, '');
+      const startStr = `${dateClean}T${String(Math.floor(startTotal / 60)).padStart(2, '0')}${String(startTotal % 60).padStart(2, '0')}00`;
+      const endStr = `${dateClean}T${String(Math.floor(endTotal / 60)).padStart(2, '0')}${String(endTotal % 60).padStart(2, '0')}00`;
+
+      const title = encodeURIComponent(`תספורת - ${app.firstName} ${app.lastName}`);
+      const details = encodeURIComponent(`לקוח: ${app.firstName} ${app.lastName}\nטלפון: ${app.phone}`);
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startStr}/${endStr}&details=${details}`;
+    }
+
+    // --- Range Filter & Appointments List ---
+    window.setRangeFilter = function(range) {
+      currentRangeFilter = range;
+      if (range !== 'custom') {
+        document.getElementById('filterDate').value = '';
       }
+
+      ['all', 'today', 'thisWeek', 'nextWeek', 'thisMonth'].forEach(id => {
+        const el = document.getElementById(`flt-${id}`);
+        if (el) {
+          el.className = id === range
+            ? 'bg-emerald-500 text-zinc-950 font-bold text-xs px-3 py-1.5 rounded-lg'
+            : 'bg-zinc-800 text-zinc-300 font-bold text-xs px-3 py-1.5 rounded-lg';
+        }
+      });
+      renderAdminAppointments();
+    };
+
+    window.renderAdminAppointments = function() {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const todayStr = formatDate(now);
+
+      // Start & End of current week (Sunday to Saturday)
+      const startOfThisWeek = new Date(now);
+      startOfThisWeek.setDate(now.getDate() - now.getDay());
+      const endOfThisWeek = new Date(startOfThisWeek);
+      endOfThisWeek.setDate(startOfThisWeek.getDate() + 6);
+
+      // Start & End of next week
+      const startOfNextWeek = new Date(endOfThisWeek);
+      startOfNextWeek.setDate(endOfThisWeek.getDate() + 1);
+      const endOfNextWeek = new Date(startOfNextWeek);
+      endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
+
+      const thisWeekStartStr = formatDate(startOfThisWeek);
+      const thisWeekEndStr = formatDate(endOfThisWeek);
+      const nextWeekStartStr = formatDate(startOfNextWeek);
+      const nextWeekEndStr = formatDate(endOfNextWeek);
+      const thisMonthPrefix = todayStr.slice(0, 7);
+
+      let list = [...appointments].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+      if (currentRangeFilter === 'custom') {
+        const customDate = document.getElementById('filterDate').value;
+        if (customDate) list = list.filter(a => a.date === customDate);
+      } else if (currentRangeFilter === 'today') {
+        list = list.filter(a => a.date === todayStr);
+      } else if (currentRangeFilter === 'thisWeek') {
+        list = list.filter(a => a.date >= thisWeekStartStr && a.date <= thisWeekEndStr);
+      } else if (currentRangeFilter === 'nextWeek') {
+        list = list.filter(a => a.date >= nextWeekStartStr && a.date <= nextWeekEndStr);
+      } else if (currentRangeFilter === 'thisMonth') {
+        list = list.filter(a => a.date.startsWith(thisMonthPrefix));
+      }
+
       document.getElementById('totalCount').textContent = list.length;
 
       const container = document.getElementById('adminAppointmentsList');
       if (list.length === 0) {
-        container.innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm bg-zinc-900/50 rounded-2xl border border-zinc-800">אין תורים להצגה</div>`;
+        container.innerHTML = `<div class="col-span-full text-center py-12 text-zinc-500 text-sm bg-zinc-900/50 rounded-2xl border border-zinc-800">אין תורים להצגה בטווח שנבחר</div>`;
         return;
       }
 
       container.innerHTML = list.map(app => {
         const d = new Date(app.date + 'T00:00:00');
+        const calUrl = buildGoogleCalendarUrl(app);
         return `
-          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex items-center justify-between">
+          <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div class="flex items-center gap-2">
                 <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold px-2.5 py-0.5 rounded-lg">${app.time}</span>
@@ -505,9 +674,14 @@
               <p class="text-base font-bold text-zinc-200 mt-2">${app.firstName} ${app.lastName}</p>
               <a href="tel:${app.phone}" class="text-xs text-amber-400 hover:underline mt-0.5 inline-block" dir="ltr">📞 ${app.phone}</a>
             </div>
-            <button onclick="adminCancel('${app.id}')" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-md">
-              בטל תור
-            </button>
+            <div class="flex items-center gap-2 self-end sm:self-center">
+              <a href="${calUrl}" target="_blank" rel="noopener noreferrer" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 border border-amber-500/30 text-xs font-bold px-3 py-2.5 rounded-xl">
+                הוסף ליומן 📅
+              </a>
+              <button onclick="adminCancel('${app.id}')" class="bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-md">
+                בטל תור
+              </button>
+            </div>
           </div>
         `;
       }).join('');
@@ -518,7 +692,7 @@
       try {
         await deleteDoc(doc(db, "appointments", id));
         showToast("התור בוטל והשעה התפנתה ביומן");
-      } catch (e) {
+      } catch {
         showToast("שגיאה בביטול התור", true);
       }
     };
