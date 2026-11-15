@@ -40,7 +40,7 @@
       <div class="flex flex-wrap gap-1.5 sm:gap-2">
         <button onclick="switchTab('appointments')" id="tabAppBtn" class="bg-emerald-500 text-zinc-950 font-bold text-xs px-3 py-2 rounded-xl">כל התורים</button>
         <button onclick="switchTab('calendarMgr')" id="tabCalBtn" class="bg-zinc-800 text-zinc-300 font-bold text-xs px-3 py-2 rounded-xl">יומן וחסימות</button>
-        <button onclick="switchTab('settings')" id="tabSetBtn" class="bg-zinc-800 text-zinc-300 font-bold text-xs px-3 py-2 rounded-xl">הגדרות שעות</button>
+        <button onclick="switchTab('settings')" id="tabSetBtn" class="bg-zinc-800 text-zinc-300 font-bold text-xs px-3 py-2 rounded-xl">הגדרות ושירותים</button>
         <button onclick="logoutAdmin()" class="bg-zinc-800 hover:bg-rose-500/20 hover:text-rose-300 text-zinc-400 font-bold text-xs px-3 py-2 rounded-xl">יציאה</button>
       </div>
     </div>
@@ -61,7 +61,6 @@
           </div>
         </div>
 
-        <!-- Range Filter Buttons -->
         <div class="flex flex-wrap gap-1.5 pt-2 border-t border-zinc-800">
           <button onclick="setRangeFilter('all')" id="flt-all" class="bg-emerald-500 text-zinc-950 font-bold text-xs px-3 py-1.5 rounded-lg">הכל</button>
           <button onclick="setRangeFilter('today')" id="flt-today" class="bg-zinc-800 text-zinc-300 font-bold text-xs px-3 py-1.5 rounded-lg">היום</button>
@@ -109,13 +108,47 @@
       </div>
     </div>
 
-    <!-- TAB 3: GENERAL & PER-DAY SCHEDULE RULES -->
+    <!-- TAB 3: SETTINGS, LIMITS & SERVICES -->
     <div id="settingsTab" class="hidden space-y-6">
+      
+      <!-- Limits & Services Card -->
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-5">
+        <div class="border-b border-zinc-800 pb-3">
+          <h2 class="text-lg font-bold text-white">מגבלת תורים ללקוח וסוגי טיפולים</h2>
+          <p class="text-xs text-zinc-400">הגדר כמה תורים עתידיים מותר לכל לקוח להחזיק במקביל, ואת מחירון ומשך כל טיפול</p>
+        </div>
+
+        <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <label class="block text-sm font-bold text-white">מקסימום תורים פעילים ללקוח במקביל</label>
+            <p class="text-xs text-zinc-400">חוסם לקוחות מלתפוס מספר רב של תורים עתידיים מראש (0 = ללא הגבלה)</p>
+          </div>
+          <select id="maxActivePerUserInput" class="bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white font-bold outline-none">
+            <option value="0">ללא הגבלה</option>
+            <option value="1">תור 1 פעיל בלבד</option>
+            <option value="2">עד 2 תורים פעילים</option>
+            <option value="3">עד 3 תורים פעילים</option>
+            <option value="5">עד 5 תורים פעילים</option>
+          </select>
+        </div>
+
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-amber-400">✂ סוגי שירותים / טיפולים</h3>
+            <button onclick="addServiceRow()" class="bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-400 text-xs font-bold px-3 py-1.5 rounded-xl">
+              + הוסף שירות
+            </button>
+          </div>
+          <div id="servicesEditor" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <!-- Weekly Schedule Card -->
       <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 space-y-5">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-zinc-800 pb-3">
           <div>
             <h2 class="text-lg font-bold text-white">הגדרות שעות קבועות לפי ימי השבוע</h2>
-            <p class="text-xs text-zinc-400">תוכל להגדיר שעות, אורך תור ומכסה שונה לכל יום בשבוע (למשל יום ראשון ויום שישי)</p>
+            <p class="text-xs text-zinc-400">הגדר שעות פתיחה, גודל משבצת בסיסי ביומן ומכסה יומית לכל יום בשבוע</p>
           </div>
           <button onclick="applyFirstDayToAll()" class="bg-zinc-800 hover:bg-zinc-700 text-amber-400 text-xs font-bold px-3 py-2 rounded-xl border border-amber-500/20">
             העתק הגדרות יום א' לכל הימים הפעילים
@@ -152,6 +185,12 @@
     const daysHe = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
     const monthsHe = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
 
+    const defaultServices = [
+      { id: "srv_1", name: "תספורת גבר", price: 60, duration: 30 },
+      { id: "srv_2", name: "תספורת + זקן", price: 80, duration: 45 },
+      { id: "srv_3", name: "תספורת ילד", price: 50, duration: 30 }
+    ];
+
     function buildDefaultWeeklyRules(base) {
       const rules = {};
       for (let i = 0; i < 7; i++) {
@@ -159,7 +198,7 @@
           enabled: (base.activeDays || [0, 1, 2, 3, 4, 5]).includes(i),
           startTime: base.startTime || "15:00",
           endTime: base.endTime || "20:00",
-          interval: Number(base.interval) || 45,
+          interval: Number(base.interval) || 30,
           bufferMinutes: Number(base.bufferMinutes) || 0,
           maxAppointmentsPerDay: Number(base.maxAppointmentsPerDay) || 0
         };
@@ -171,9 +210,11 @@
       activeDays: [0, 1, 2, 3, 4, 5],
       startTime: "15:00",
       endTime: "20:00",
-      interval: 45,
+      interval: 30,
       bufferMinutes: 0,
       maxAppointmentsPerDay: 0,
+      maxActivePerUser: 2,
+      services: defaultServices,
       weeklyRules: null,
       blockedDates: [],
       blockedSlots: []
@@ -237,6 +278,9 @@
         if (!data.weeklyRules) {
           settings.weeklyRules = buildDefaultWeeklyRules(settings);
         }
+        if (!data.services || data.services.length === 0) {
+          settings.services = defaultServices;
+        }
       }
       populateSettingsUI();
       renderAdminCalendar();
@@ -262,10 +306,32 @@
         enabled: (settings.activeDays || []).includes(dayIndex),
         startTime: settings.startTime || "15:00",
         endTime: settings.endTime || "20:00",
-        interval: Number(settings.interval) || 45,
+        interval: Number(settings.interval) || 30,
         bufferMinutes: Number(settings.bufferMinutes) || 0,
         maxAppointmentsPerDay: Number(settings.maxAppointmentsPerDay) || 0
       };
+    }
+
+    function timeToMins(t) {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function minsToTime(mins) {
+      const h = String(Math.floor(mins / 60)).padStart(2, '0');
+      const m = String(mins % 60).padStart(2, '0');
+      return `${h}:${m}`;
+    }
+
+    function isSlotOccupiedByApp(dateStr, slotStartMins, slotDurationMins) {
+      const slotEndMins = slotStartMins + slotDurationMins;
+      return appointments.find(a => {
+        if (a.date !== dateStr) return false;
+        const appStart = timeToMins(a.time);
+        const appDuration = Number(a.serviceDuration) || slotDurationMins;
+        const appEnd = appStart + appDuration;
+        return slotStartMins < appEnd && slotEndMins > appStart;
+      });
     }
 
     function generateTimeSlotsForDate(dateStr) {
@@ -273,26 +339,87 @@
       const rule = getDayRule(d.getDay());
       if (!rule.enabled) return [];
 
-      const [startH, startM] = rule.startTime.split(':').map(Number);
-      const [endH, endM] = rule.endTime.split(':').map(Number);
-      let current = startH * 60 + startM;
-      const end = endH * 60 + endM;
-      const duration = Number(rule.interval) || 45;
+      let current = timeToMins(rule.startTime);
+      const end = timeToMins(rule.endTime);
+      const step = Number(rule.interval) || 30;
       const buffer = Number(rule.bufferMinutes) || 0;
       const maxPerDay = Number(rule.maxAppointmentsPerDay) || 0;
 
       const slots = [];
-      while (current + duration <= end) {
+      while (current + step <= end) {
         if (maxPerDay > 0 && slots.length >= maxPerDay) break;
-        const h = String(Math.floor(current / 60)).padStart(2, '0');
-        const m = String(current % 60).padStart(2, '0');
-        slots.push(`${h}:${m}`);
-        current += duration + buffer;
+        slots.push(minsToTime(current));
+        current += step + buffer;
       }
       return slots;
     }
 
+    function renderServicesEditor() {
+      const container = document.getElementById('servicesEditor');
+      container.innerHTML = settings.services.map((srv, idx) => `
+        <div class="grid grid-cols-12 gap-2 items-center bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 srv-row">
+          <div class="col-span-5">
+            <label class="block text-[10px] text-zinc-400 mb-0.5">שם השירות</label>
+            <input type="text" value="${srv.name}" placeholder="תספורת גבר" class="srv-name w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+          </div>
+          <div class="col-span-3">
+            <label class="block text-[10px] text-zinc-400 mb-0.5">מחיר (₪)</label>
+            <input type="number" value="${srv.price}" min="0" class="srv-price w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+          </div>
+          <div class="col-span-3">
+            <label class="block text-[10px] text-zinc-400 mb-0.5">משך (דק')</label>
+            <input type="number" value="${srv.duration}" min="5" max="240" step="5" class="srv-dur w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+          </div>
+          <div class="col-span-1 flex justify-end pt-4">
+            <button onclick="removeServiceRow(${idx})" title="מחק שירות" class="text-rose-400 hover:text-rose-300 text-sm font-bold px-2">✕</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.addServiceRow = function() {
+      syncServicesFromDOM();
+      settings.services.push({
+        id: "srv_" + Date.now(),
+        name: "טיפול חדש",
+        price: 70,
+        duration: 30
+      });
+      renderServicesEditor();
+    };
+
+    window.removeServiceRow = function(idx) {
+      syncServicesFromDOM();
+      if (settings.services.length <= 1) {
+        showToast("חייב להישאר לפחות שירות אחד פעיל", true);
+        return;
+      }
+      settings.services.splice(idx, 1);
+      renderServicesEditor();
+    };
+
+    function syncServicesFromDOM() {
+      const rows = document.querySelectorAll('.srv-row');
+      if (rows.length === 0) return;
+      const updated = [];
+      rows.forEach((row, i) => {
+        const name = row.querySelector('.srv-name').value.trim() || "תספורת";
+        const price = Number(row.querySelector('.srv-price').value) || 0;
+        const duration = Number(row.querySelector('.srv-dur').value) || 30;
+        updated.push({
+          id: settings.services[i]?.id || ("srv_" + i + "_" + Date.now()),
+          name,
+          price,
+          duration
+        });
+      });
+      settings.services = updated;
+    }
+
     function populateSettingsUI() {
+      document.getElementById('maxActivePerUserInput').value = String(settings.maxActivePerUser ?? 2);
+      renderServicesEditor();
+
       const container = document.getElementById('weeklyScheduleEditor');
       container.innerHTML = daysHe.map((name, idx) => {
         const r = getDayRule(idx);
@@ -313,7 +440,7 @@
                   <input type="time" id="day-end-${idx}" value="${r.endTime}" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
                 </div>
                 <div>
-                  <label class="block text-[10px] text-zinc-400 mb-0.5">אורך תור (דק')</label>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">קפיצת שעות (דק')</label>
                   <input type="number" id="day-int-${idx}" value="${r.interval}" min="5" max="240" class="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
                 </div>
                 <div>
@@ -362,6 +489,7 @@
       btn.textContent = "שומר בענן...";
 
       try {
+        syncServicesFromDOM();
         const weeklyRules = {};
         const activeDays = [];
 
@@ -372,7 +500,7 @@
             enabled,
             startTime: document.getElementById(`day-start-${i}`).value || "15:00",
             endTime: document.getElementById(`day-end-${i}`).value || "20:00",
-            interval: Number(document.getElementById(`day-int-${i}`).value) || 45,
+            interval: Number(document.getElementById(`day-int-${i}`).value) || 30,
             bufferMinutes: Number(document.getElementById(`day-buf-${i}`).value) || 0,
             maxAppointmentsPerDay: Number(document.getElementById(`day-max-${i}`).value) || 0
           };
@@ -387,6 +515,8 @@
           interval: firstRule.interval,
           bufferMinutes: firstRule.bufferMinutes,
           maxAppointmentsPerDay: firstRule.maxAppointmentsPerDay,
+          maxActivePerUser: Number(document.getElementById('maxActivePerUserInput').value) || 0,
+          services: settings.services,
           weeklyRules,
           updatedAt: Date.now()
         };
@@ -395,7 +525,7 @@
         settings = newSettings;
         renderAdminCalendar();
         renderAdminDaySlots();
-        showToast("הגדרות כל ימי השבוע נשמרו ועודכנו אצל כולם! ✓");
+        showToast("כל ההגדרות, המגבלות והשירותים נשמרו! ✓");
       } catch (err) {
         console.error("Save error:", err);
         showToast("שגיאה בשמירה! בדוק הרשאות ב-Firebase Rules", true);
@@ -405,7 +535,6 @@
       }
     };
 
-    // --- Calendar Controls ---
     window.goToAdminToday = function() {
       const now = new Date();
       adminSelectedDate = formatDate(now);
@@ -441,7 +570,7 @@
         const isDateBlocked = (settings.blockedDates || []).includes(dateStr);
 
         const daySlots = generateTimeSlotsForDate(dateStr);
-        const takenCount = appointments.filter(a => a.date === dateStr).length;
+        const takenCount = daySlots.filter(t => isSlotOccupiedByApp(dateStr, timeToMins(t), rule.interval)).length;
         const blockedSlotsCount = (settings.blockedSlots || []).filter(s => s.startsWith(dateStr + '_')).length;
         const freeCount = (isWeeklyClosed || isDateBlocked) ? 0 : Math.max(0, daySlots.length - takenCount - blockedSlotsCount);
 
@@ -498,7 +627,7 @@
       }
 
       if (isDateBlocked) {
-        container.innerHTML = `<div class="text-center py-8 text-rose-400 text-xs bg-rose-500/10 border border-rose-500/20 rounded-xl">יום זה חסום לחלוטין בפני לקוחות. לחץ למעלה על "שחרר יום שלם" כדי לפתוח אותו מחדש.</div>`;
+        container.innerHTML = `<div class="text-center py-8 text-rose-400 text-xs bg-rose-500/10 border border-rose-500/20 rounded-xl">יום זה חסום לחלוטין בפני לקוחות.</div>`;
         return;
       }
 
@@ -512,14 +641,15 @@
 
       slots.forEach(time => {
         const key = `${adminSelectedDate}_${time}`;
-        const bookedApp = appointments.find(a => a.date === adminSelectedDate && a.time === time);
+        const bookedApp = isSlotOccupiedByApp(adminSelectedDate, timeToMins(time), rule.interval);
         const isBlocked = (settings.blockedSlots || []).includes(key);
 
         if (bookedApp) {
           html += `
             <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center">
               <div class="text-xs font-bold text-amber-400">${time}</div>
-              <div class="text-[10px] text-zinc-300 truncate">${bookedApp.firstName} ${bookedApp.lastName}</div>
+              <div class="text-[10px] text-zinc-200 truncate">${bookedApp.firstName} ${bookedApp.lastName}</div>
+              <div class="text-[9px] text-amber-300/80 truncate">${bookedApp.serviceName || 'תספורת'}</div>
             </div>
           `;
         } else if (isBlocked) {
@@ -556,7 +686,7 @@
           showToast(`התאריך ${adminSelectedDate} נחסם לחלוטין!`);
         }
       } catch {
-        showToast("שגיאה בעדכון התאריך - בדוק הרשאות Firebase", true);
+        showToast("שגיאה בעדכון התאריך", true);
       }
     };
 
@@ -574,30 +704,28 @@
           showToast(`השעה ${time} נחסמה מראש`);
         }
       } catch {
-        showToast("שגיאה בעדכון השעה - בדוק הרשאות Firebase", true);
+        showToast("שגיאה בעדכון השעה", true);
       }
     };
 
-    // --- Google Calendar Link Builder ---
     function buildGoogleCalendarUrl(app) {
       const d = new Date(app.date + 'T00:00:00');
       const rule = getDayRule(d.getDay());
-      const duration = Number(rule.interval) || 45;
+      const duration = Number(app.serviceDuration) || Number(rule.interval) || 30;
 
-      const [h, m] = app.time.split(':').map(Number);
-      const startTotal = h * 60 + m;
+      const startTotal = timeToMins(app.time);
       const endTotal = startTotal + duration;
 
       const dateClean = app.date.replace(/-/g, '');
       const startStr = `${dateClean}T${String(Math.floor(startTotal / 60)).padStart(2, '0')}${String(startTotal % 60).padStart(2, '0')}00`;
       const endStr = `${dateClean}T${String(Math.floor(endTotal / 60)).padStart(2, '0')}${String(endTotal % 60).padStart(2, '0')}00`;
 
-      const title = encodeURIComponent(`תספורת - ${app.firstName} ${app.lastName}`);
-      const details = encodeURIComponent(`לקוח: ${app.firstName} ${app.lastName}\nטלפון: ${app.phone}`);
+      const srvLabel = app.serviceName || 'תספורת';
+      const title = encodeURIComponent(`${srvLabel} - ${app.firstName} ${app.lastName}`);
+      const details = encodeURIComponent(`לקוח: ${app.firstName} ${app.lastName}\nשירות: ${srvLabel} (${duration} דק')\nטלפון: ${app.phone}`);
       return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startStr}/${endStr}&details=${details}`;
     }
 
-    // --- Range Filter & Appointments List ---
     window.setRangeFilter = function(range) {
       currentRangeFilter = range;
       if (range !== 'custom') {
@@ -620,13 +748,11 @@
       now.setHours(0, 0, 0, 0);
       const todayStr = formatDate(now);
 
-      // Start & End of current week (Sunday to Saturday)
       const startOfThisWeek = new Date(now);
       startOfThisWeek.setDate(now.getDate() - now.getDay());
       const endOfThisWeek = new Date(startOfThisWeek);
       endOfThisWeek.setDate(startOfThisWeek.getDate() + 6);
 
-      // Start & End of next week
       const startOfNextWeek = new Date(endOfThisWeek);
       startOfNextWeek.setDate(endOfThisWeek.getDate() + 1);
       const endOfNextWeek = new Date(startOfNextWeek);
@@ -664,12 +790,16 @@
       container.innerHTML = list.map(app => {
         const d = new Date(app.date + 'T00:00:00');
         const calUrl = buildGoogleCalendarUrl(app);
+        const srvBadge = app.serviceName
+          ? `<span class="bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[11px] font-bold px-2 py-0.5 rounded-md">${app.serviceName}${app.servicePrice ? ` • ₪${app.servicePrice}` : ''}</span>`
+          : '';
         return `
           <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center gap-2">
                 <span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold px-2.5 py-0.5 rounded-lg">${app.time}</span>
                 <span class="text-sm font-bold text-white">יום ${daysHe[d.getDay()]}, ${d.getDate()}/${d.getMonth() + 1}</span>
+                ${srvBadge}
               </div>
               <p class="text-base font-bold text-zinc-200 mt-2">${app.firstName} ${app.lastName}</p>
               <a href="tel:${app.phone}" class="text-xs text-amber-400 hover:underline mt-0.5 inline-block" dir="ltr">📞 ${app.phone}</a>
