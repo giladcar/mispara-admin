@@ -992,8 +992,16 @@
                   ${manualBadge}
                 </div>
                 <p class="text-base font-bold text-zinc-200 mt-2">${app.firstName} ${app.lastName}</p>
-                <a href="tel:${app.phone}" class="text-xs text-amber-400 hover:underline mt-0.5 inline-block" dir="ltr">📞 ${app.phone}</a>
-              </div>
+<a href="tel:${app.phone}" class="text-xs text-amber-400 hover:underline mt-0.5 inline-block" dir="ltr">📞 ${app.phone}</a>
+                ${app.userEmail && app.userEmail !== 'manual-admin@mispara.local' ? `
+                  <div class="flex flex-wrap items-center gap-2 mt-1">
+                    <span class="text-[11px] text-zinc-400" dir="ltr">✉️ ${app.userEmail}</span>
+                    <button onclick="blockUserByEmail('${app.userEmail}', '${app.firstName} ${app.lastName}')" class="bg-rose-500/15 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/30 text-[10px] font-bold px-2 py-0.5 rounded-md transition">
+                      חסום מייל 🚫
+                    </button>
+                  </div>
+                ` : ''}
+				</div>
             </div>
 
             <div class="flex flex-wrap items-center gap-2 pt-2.5 border-t border-zinc-800/80">
@@ -1035,6 +1043,12 @@
 </body>
 </html>
 
+<script type="module" src="banner.js"></script>
+  <script type="module" src="barberPhone.js"></script>
+  <script type="module" src="blacklist.js"></script>
+  <script src="offlineAlert.js"></script>
+</body>
+</html>
 
 </body>
 </html>
