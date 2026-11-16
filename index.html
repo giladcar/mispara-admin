@@ -226,8 +226,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, setDoc, collection, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+import { getFirestore, doc, setDoc, updateDoc, collection, addDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     const firebaseConfig = {
       apiKey: "AIzaSyCN3-QXjz-6u8ynxjN8END8kEKuxXBF43U",
       authDomain: "saparot-51229.firebaseapp.com",
@@ -349,7 +348,9 @@
     });
 
     onSnapshot(collection(db, "appointments"), (snapshot) => {
-      appointments = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      appointments = snapshot.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(a => a.status !== "canceled_by_admin");
       renderAdminAppointments();
       renderAdminCalendar();
       renderAdminDaySlots();
@@ -1020,10 +1021,13 @@
       }).join('');
     };
 
-    window.adminCancel = async function(id) {
+ window.adminCancel = async function(id) {
       if (!confirm("לבטל את התור של הלקוח?")) return;
       try {
-        await deleteDoc(doc(db, "appointments", id));
+        await updateDoc(doc(db, "appointments", id), {
+          status: "canceled_by_admin",
+          canceledAt: Date.now()
+        });
         showToast("התור בוטל והשעה התפנתה ביומן");
       } catch {
         showToast("שגיאה בביטול התור", true);
