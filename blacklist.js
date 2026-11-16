@@ -15,6 +15,10 @@ const db = getFirestore(app);
 
 let blockedUsersList = [];
 
+function emailToSafeId(email) {
+  return encodeURIComponent(email.trim().toLowerCase()).replace(/\./g, "%2E");
+}
+
 window.blockUserByEmail = async function(email, fullName = "") {
   const cleanEmail = (email || "").trim().toLowerCase();
   if (!cleanEmail || cleanEmail === "manual-admin@mispara.local") {
@@ -22,14 +26,19 @@ window.blockUserByEmail = async function(email, fullName = "") {
     return;
   }
 
-  const reason = prompt(`הזן סיבת חסימה עבור ${fullName ? fullName + " (" + cleanEmail + ")" : cleanEmail}:`, "הברזה מתור ללא הודעה מראש");
+  const reason = prompt(
+    `הזן סיבת חסימה עבור ${fullName ? fullName + " (" + cleanEmail + ")" : cleanEmail}:`,
+    "הברזה מתור ללא הודעה מראש"
+  );
   if (reason === null) return;
 
   const cleanReason = reason.trim() || "הפרת נהלי המספרה";
+  const docId = emailToSafeId(cleanEmail);
 
   try {
-    // 1. Add user to blocked_users collection
-    await setDoc(doc(db, "blocked_users", cleanEmail), {
+    // 1. Save blocked user record
+    await setDoc(doc(db, "blocked_users", docId), {
+      id: docId,
       email: cleanEmail,
       name: fullName,
       reason: cleanReason,
@@ -55,21 +64,20 @@ window.blockUserByEmail = async function(email, fullName = "") {
         : `המשתמש ${cleanEmail} נחסם בהצלחה! 🚫`
     );
   } catch (err) {
-    console.error(err);
-    alert("שגיאה בחסימת המשתמש או בביטול תוריו");
+    console.error("Blacklist error:", err);
+    alert(`שגיאה בחסימת המשתמש:\n${err.code || ""} - ${err.message || err}`);
   }
 };
 
-window.unblockUserByEmail = async function(email) {
-  const cleanEmail = (email || "").trim().toLowerCase();
-  if (!confirm(`להתיר את החסימה עבור ${cleanEmail}?`)) return;
+window.unblockUserByEmail = async function(docId, email) {
+  if (!confirm(`להתיר את החסימה עבור ${email}?`)) return;
 
   try {
-    await deleteDoc(doc(db, "blocked_users", cleanEmail));
-    alert(`החסימה הוסרה עבור ${cleanEmail} ✓`);
+    await deleteDoc(doc(db, "blocked_users", docId));
+    alert(`החסימה הוסרה עבור ${email} ✓`);
   } catch (err) {
-    console.error(err);
-    alert("שגיאה בהסרת החסימה");
+    console.error("Unblock error:", err);
+    alert(`שגיאה בהסרת החסימה:\n${err.message || err}`);
   }
 };
 
@@ -85,20 +93,23 @@ function renderBlockedUsersList() {
     return;
   }
 
-  listEl.innerHTML = blockedUsersList.map(u => `
-    <div class="bg-zinc-950 border border-rose-500/30 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-      <div>
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="text-xs font-bold text-rose-400" dir="ltr">${u.email}</span>
-          ${u.name ? `<span class="text-xs text-zinc-300 font-medium">(${u.name})</span>` : ""}
+  listEl.innerHTML = blockedUsersList.map(u => {
+    const safeId = u.id || emailToSafeId(u.email);
+    return `
+      <div class="bg-zinc-950 border border-rose-500/30 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div>
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-bold text-rose-400" dir="ltr">${u.email}</span>
+            ${u.name ? `<span class="text-xs text-zinc-300 font-medium">(${u.name})</span>` : ""}
+          </div>
+          <p class="text-xs text-zinc-400 mt-1"><b>סיבה:</b> ${u.reason}</p>
         </div>
-        <p class="text-xs text-zinc-400 mt-1"><b>סיבה:</b> ${u.reason}</p>
+        <button onclick="unblockUserByEmail('${safeId}', '${u.email}')" class="bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-zinc-950 border border-emerald-500/30 text-xs font-bold px-3 py-1.5 rounded-lg transition self-start sm:self-auto whitespace-nowrap">
+          התר חסימה ✓
+        </button>
       </div>
-      <button onclick="unblockUserByEmail('${u.email}')" class="bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-zinc-950 border border-emerald-500/30 text-xs font-bold px-3 py-1.5 rounded-lg transition self-start sm:self-auto whitespace-nowrap">
-        התר חסימה ✓
-      </button>
-    </div>
-  `).join("");
+    `;
+  }).join("");
 }
 
 function mountBlacklistUI() {
@@ -148,8 +159,10 @@ function mountBlacklistUI() {
 }
 
 onSnapshot(collection(db, "blocked_users"), (snap) => {
-  blockedUsersList = snap.docs.map(d => d.data()).sort((a, b) => (b.blockedAt || 0) - (a.blockedAt || 0));
+  blockedUsersList = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.blockedAt || 0) - (a.blockedAt || 0));
   renderBlockedUsersList();
+}, (err) => {
+  console.error("Snapshot blocked_users error:", err);
 });
 
 mountBlacklistUI();
