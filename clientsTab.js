@@ -41,10 +41,25 @@ function getClientKey(email, phone) {
 }
 
 function findTopTabsBar() {
+  const appointmentsTab = document.getElementById("appointmentsTab");
+  if (!appointmentsTab) return null;
+
+  const parent = appointmentsTab.parentElement;
+  if (parent) {
+    const siblingBar = Array.from(parent.children).find(
+      (el) =>
+        el !== appointmentsTab &&
+        el.id !== "clientsProfilesTab" &&
+        el.querySelectorAll("button").length >= 2
+    );
+    if (siblingBar) return siblingBar;
+  }
+
   const allButtons = Array.from(document.querySelectorAll("button"));
-  const settingsTabBtn = allButtons.find((b) => (b.textContent || "").includes("??????"));
-  if (!settingsTabBtn) return null;
-  return settingsTabBtn.parentElement;
+  const settingsTabBtn = allButtons.find((b) =>
+    (b.textContent || "").includes("??????")
+  );
+  return settingsTabBtn ? settingsTabBtn.parentElement : null;
 }
 
 function setClientsTabVisibility(active) {
@@ -83,7 +98,15 @@ function mountClientsTabUI() {
   const appointmentsTab = document.getElementById("appointmentsTab");
   if (!appointmentsTab) return;
 
-  const tabsBar = findTopTabsBar();
+  let tabsBar = findTopTabsBar();
+
+  if (!tabsBar && !document.getElementById("customAdminTabsBar")) {
+    tabsBar = document.createElement("div");
+    tabsBar.id = "customAdminTabsBar";
+    tabsBar.className = "flex flex-wrap gap-2 mb-4";
+    appointmentsTab.parentElement.insertBefore(tabsBar, appointmentsTab);
+  }
+
   if (tabsBar && !document.getElementById("tabBtnClients")) {
     const btn = document.createElement("button");
     btn.id = "tabBtnClients";
@@ -94,7 +117,6 @@ function mountClientsTabUI() {
 
     btn.addEventListener("click", () => setClientsTabVisibility(true));
 
-    // When clicking any existing tab button (Calendar / Settings / etc.), close Clients tab
     Array.from(tabsBar.querySelectorAll("button")).forEach((otherBtn) => {
       if (otherBtn.id === "tabBtnClients") return;
       otherBtn.addEventListener("click", () => {
@@ -139,7 +161,6 @@ function mountClientsTabUI() {
   }
 }
 
-// Explicit 0 write (without merge) so decrementing from 1 to 0 actually saves 0 in Firestore
 async function updateCounter(docName, currentMap, key, delta) {
   const current = Number(currentMap[key]) || 0;
   const next = Math.max(0, current + delta);
@@ -423,7 +444,6 @@ function highlightTodayInAdminCalendar() {
   });
 }
 
-// Mount after DOM/login renders
 setTimeout(mountClientsTabUI, 300);
 const bodyObs = new MutationObserver(() => {
   if (!document.getElementById("tabBtnClients")) mountClientsTabUI();
