@@ -28,6 +28,7 @@ let blockedDocs = [];
 let noShowCounts = {};
 let lateCounts = {};
 let searchQuery = "";
+let isClientsTabActive = false;
 
 function normKey(raw) {
   return (raw || "").trim().toLowerCase();
@@ -39,98 +40,116 @@ function getClientKey(email, phone) {
   return (phone || "").replace(/\D/g, "");
 }
 
+function findTopTabsBar() {
+  const allButtons = Array.from(document.querySelectorAll("button"));
+  const settingsTabBtn = allButtons.find((b) => (b.textContent || "").includes("??????"));
+  if (!settingsTabBtn) return null;
+  return settingsTabBtn.parentElement;
+}
+
+function setClientsTabVisibility(active) {
+  isClientsTabActive = active;
+  const clientsPanel = document.getElementById("clientsProfilesTab");
+  const appointmentsTab = document.getElementById("appointmentsTab");
+  const settingsTab = document.getElementById("settingsTab");
+  const tabBtn = document.getElementById("tabBtnClients");
+  const tabsBar = findTopTabsBar();
+
+  if (active) {
+    if (appointmentsTab) appointmentsTab.classList.add("hidden");
+    if (settingsTab) settingsTab.classList.add("hidden");
+    if (clientsPanel) clientsPanel.classList.remove("hidden");
+
+    if (tabsBar) {
+      Array.from(tabsBar.querySelectorAll("button")).forEach((b) => {
+        if (b.id === "tabBtnClients") {
+          b.className = "px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black bg-emerald-500 text-zinc-950 shadow-lg shadow-emerald-500/20 transition";
+        } else {
+          b.classList.remove("bg-emerald-500", "bg-amber-500", "text-zinc-950");
+          b.classList.add("bg-zinc-900", "text-zinc-400");
+        }
+      });
+    }
+    renderClientsDirectory();
+  } else {
+    if (clientsPanel) clientsPanel.classList.add("hidden");
+    if (tabBtn) {
+      tabBtn.className = "px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 transition";
+    }
+  }
+}
+
 function mountClientsTabUI() {
   const appointmentsTab = document.getElementById("appointmentsTab");
-  if (!appointmentsTab || document.getElementById("clientsProfilesTab")) return;
+  if (!appointmentsTab) return;
 
-  // Find tab buttons bar right above appointmentsTab
-  const parent = appointmentsTab.parentElement;
-  const tabButtonsRow = Array.from(parent.children).find(
-    (el) => el !== appointmentsTab && el.querySelectorAll("button").length >= 2
-  );
-
-  if (tabButtonsRow && !document.getElementById("tabBtnClients")) {
+  const tabsBar = findTopTabsBar();
+  if (tabsBar && !document.getElementById("tabBtnClients")) {
     const btn = document.createElement("button");
     btn.id = "tabBtnClients";
     btn.type = "button";
-    btn.className =
-      "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 transition";
-    btn.textContent = "👥 לקוחות ופרופילים";
-    tabButtonsRow.appendChild(btn);
+    btn.className = "px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 transition";
+    btn.textContent = "?? ?????? ?????????";
+    tabsBar.appendChild(btn);
 
-    // Handle switching between existing tabs and the new Clients tab
-    tabButtonsRow.querySelectorAll("button").forEach((otherBtn) => {
+    btn.addEventListener("click", () => setClientsTabVisibility(true));
+
+    // When clicking any existing tab button (Calendar / Settings / etc.), close Clients tab
+    Array.from(tabsBar.querySelectorAll("button")).forEach((otherBtn) => {
       if (otherBtn.id === "tabBtnClients") return;
       otherBtn.addEventListener("click", () => {
-        const clientsPanel = document.getElementById("clientsProfilesTab");
-        if (clientsPanel) clientsPanel.classList.add("hidden");
-        btn.className =
-          "px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800 transition";
+        setClientsTabVisibility(false);
       });
-    });
-
-    btn.addEventListener("click", () => {
-      // Hide other sibling panels
-      Array.from(parent.children).forEach((el) => {
-        if (el !== tabButtonsRow && el.id !== "clientsProfilesTab" && el.tagName === "DIV") {
-          el.classList.add("hidden");
-        }
-      });
-      // Reset styling on other tab buttons
-      tabButtonsRow.querySelectorAll("button").forEach((otherBtn) => {
-        if (otherBtn.id !== "tabBtnClients") {
-          otherBtn.classList.remove("bg-emerald-500", "bg-amber-500", "text-zinc-950");
-          otherBtn.classList.add("bg-zinc-900", "text-zinc-400");
-        }
-      });
-
-      const clientsPanel = document.getElementById("clientsProfilesTab");
-      if (clientsPanel) clientsPanel.classList.remove("hidden");
-      btn.className =
-        "px-4 py-2 rounded-xl text-xs sm:text-sm font-black bg-emerald-500 text-zinc-950 shadow-lg shadow-emerald-500/20 transition";
-      renderClientsDirectory();
     });
   }
 
-  const panel = document.createElement("div");
-  panel.id = "clientsProfilesTab";
-  panel.className = "hidden space-y-4";
-  panel.innerHTML = `
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-5 space-y-3">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-          <h2 class="text-lg font-black text-white">👥 פרופילים והיסטוריית לקוחות</h2>
-          <p class="text-xs text-zinc-400">סיכום הזמנות לפי סוג טיפול, ניהול הברזות, איחורים וחסימות (Ban / Unban)</p>
+  if (!document.getElementById("clientsProfilesTab")) {
+    const panel = document.createElement("div");
+    panel.id = "clientsProfilesTab";
+    panel.className = "hidden space-y-4 mt-4";
+    panel.innerHTML = `
+      <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-5 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 class="text-lg font-black text-white">?? ???????? ?????????? ??????</h2>
+            <p class="text-xs text-zinc-400">????? ?????? ??? ??? ?????, ????? ??????, ??????? ??????? (Ban / Unban)</p>
+          </div>
+          <span id="totalClientsBadge" class="bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-black px-3 py-1.5 rounded-xl self-start sm:self-auto">
+            0 ??????
+          </span>
         </div>
-        <span id="totalClientsBadge" class="bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-black px-3 py-1.5 rounded-xl self-start sm:self-auto">
-          0 לקוחות
-        </span>
+        <input
+          type="text"
+          id="clientsDirectorySearch"
+          placeholder="?? ??? ???? ??? ??, ????? ?? ??????..."
+          class="w-full bg-zinc-950 border border-zinc-700 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none"
+        />
       </div>
-      <input
-        type="text"
-        id="clientsDirectorySearch"
-        placeholder="🔍 חפש לקוח לפי שם, טלפון או אימייל..."
-        class="w-full bg-zinc-950 border border-zinc-700 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none"
-      />
-    </div>
-    <div id="clientsDirectoryList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-  `;
+      <div id="clientsDirectoryList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+    `;
 
-  appointmentsTab.insertAdjacentElement("afterend", panel);
+    const settingsTab = document.getElementById("settingsTab");
+    const anchor = settingsTab || appointmentsTab;
+    anchor.insertAdjacentElement("afterend", panel);
 
-  document.getElementById("clientsDirectorySearch").addEventListener("input", (e) => {
-    searchQuery = e.target.value.trim().toLowerCase();
-    renderClientsDirectory();
-  });
+    document.getElementById("clientsDirectorySearch").addEventListener("input", (e) => {
+      searchQuery = e.target.value.trim().toLowerCase();
+      renderClientsDirectory();
+    });
+  }
 }
 
+// Explicit 0 write (without merge) so decrementing from 1 to 0 actually saves 0 in Firestore
 async function updateCounter(docName, currentMap, key, delta) {
   const current = Number(currentMap[key]) || 0;
   const next = Math.max(0, current + delta);
   const updated = { ...currentMap };
-  if (next === 0) delete updated[key];
-  else updated[key] = next;
-  await setDoc(doc(db, "config", docName), { counts: updated }, { merge: true });
+  if (next === 0) {
+    delete updated[key];
+  } else {
+    updated[key] = next;
+  }
+  await setDoc(doc(db, "config", docName), { counts: updated });
 }
 
 async function handleBanToggle(client) {
@@ -141,26 +160,25 @@ async function handleBanToggle(client) {
   });
 
   if (existingBlocks.length > 0) {
-    if (!confirm(`להתיר חסימה (Unban) עבור ${client.fullName}?`)) return;
+    if (!confirm(`????? ????? (Unban) ???? ${client.fullName}?`)) return;
     for (const blk of existingBlocks) {
       await deleteDoc(doc(db, "blocked_users", blk.id));
     }
-    alert(`החסימה הוסרה עבור ${client.fullName} ✓`);
+    alert(`?????? ????? ???? ${client.fullName} ?`);
     return;
   }
 
-  const reason = prompt(`סיבת החסימה עבור ${client.fullName}:`, "הברזות חוזרות / הפרת נהלים");
+  const reason = prompt(`???? ?????? ???? ${client.fullName}:`, "?????? ?????? / ???? ?????");
   if (reason === null) return;
 
   await addDoc(collection(db, "blocked_users"), {
     email: client.email || "",
     phone: client.phone || "",
     fullName: client.fullName,
-    reason: reason.trim() || "הפרת נהלי המספרה",
+    reason: reason.trim() || "???? ???? ??????",
     blockedAt: Date.now()
   });
 
-  // Cancel active future appointments of this client
   const todayStr = new Date().toISOString().slice(0, 10);
   const futureApps = allAppointments.filter((a) => {
     if (a.status === "canceled_by_admin" || a.date < todayStr) return false;
@@ -176,13 +194,12 @@ async function handleBanToggle(client) {
     });
   }
 
-  alert(`הלקוח ${client.fullName} נחסם בהצלחה.`);
+  alert(`????? ${client.fullName} ???? ??????.`);
 }
 
 function buildClientsMap() {
   const map = new Map();
 
-  // Seed from saved profiles
   Object.entries(savedProfiles).forEach(([email, prof]) => {
     const key = getClientKey(email, prof.phone);
     if (!key) return;
@@ -197,7 +214,6 @@ function buildClientsMap() {
     });
   });
 
-  // Aggregate from all appointments
   allAppointments.forEach((app) => {
     if (app.status === "canceled_by_admin") return;
     const key = getClientKey(app.userEmail, app.phone);
@@ -225,7 +241,7 @@ function buildClientsMap() {
     }
 
     entry.totalBookings += 1;
-    const srv = app.serviceName || "תספורת";
+    const srv = app.serviceName || "??????";
     entry.serviceBreakdown[srv] = (entry.serviceBreakdown[srv] || 0) + 1;
   });
 
@@ -248,10 +264,10 @@ function renderClientsDirectory() {
     );
   }
 
-  if (badgeEl) badgeEl.textContent = `${clients.length} לקוחות`;
+  if (badgeEl) badgeEl.textContent = `${clients.length} ??????`;
 
   if (clients.length === 0) {
-    listEl.innerHTML = `<div class="col-span-full text-center py-10 text-zinc-500 text-xs bg-zinc-900 border border-zinc-800 rounded-2xl">לא נמצאו פרופילי לקוחות תואמים</div>`;
+    listEl.innerHTML = `<div class="col-span-full text-center py-10 text-zinc-500 text-xs bg-zinc-900 border border-zinc-800 rounded-2xl">?? ????? ??????? ?????? ??????</div>`;
     return;
   }
 
@@ -280,52 +296,52 @@ function renderClientsDirectory() {
         <div>
           <div class="flex items-center gap-2 flex-wrap">
             <h3 class="text-base font-black text-white">${c.fullName}</h3>
-            ${isBanned ? `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[10px] font-black px-2 py-0.5 rounded-md">חסום 🚫</span>` : ""}
+            ${isBanned ? `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[10px] font-black px-2 py-0.5 rounded-md">???? ??</span>` : ""}
           </div>
-          <div class="text-xs text-zinc-400 mt-0.5" dir="ltr">${c.phone || ""} ${c.email ? `�?${c.email}` : ""}</div>
+          <div class="text-xs text-zinc-400 mt-0.5" dir="ltr">${c.phone || ""} ${c.email ? `? ${c.email}` : ""}</div>
         </div>
         <div class="bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-black px-3 py-1 rounded-xl shrink-0">
-          סה"כ: ${c.totalBookings}
+          ??"?: ${c.totalBookings}
         </div>
       </div>
 
       <div class="flex flex-wrap gap-1.5">
-        ${servicesTags || `<span class="text-[11px] text-zinc-500">טרם הושלמו הזמנות</span>`}
+        ${servicesTags || `<span class="text-[11px] text-zinc-500">??? ?????? ??????</span>`}
       </div>
 
       <!-- Counters Summary -->
       <div class="grid grid-cols-2 gap-2 pt-1">
         <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 flex items-center justify-between">
           <div>
-            <div class="text-[10px] text-zinc-400">הברזות (לא הגיע)</div>
+            <div class="text-[10px] text-zinc-400">?????? (?? ????)</div>
             <div class="text-sm font-black ${noShows > 0 ? "text-orange-400" : "text-zinc-300"}">${noShows}</div>
           </div>
           <div class="flex items-center gap-1">
-            <button class="btn-noshow-add bg-orange-500/20 hover:bg-orange-500 text-orange-300 hover:text-zinc-950 text-xs font-black px-2 py-1 rounded-lg transition" title="הוסף הברזה">+1</button>
-            ${noShows > 0 ? `<button class="btn-noshow-sub bg-zinc-800 hover:bg-emerald-500 text-zinc-300 hover:text-zinc-950 text-xs font-bold px-2 py-1 rounded-lg transition" title="בטל הברזה">-1</button>` : ""}
+            <button type="button" class="btn-noshow-add bg-orange-500/20 hover:bg-orange-500 text-orange-300 hover:text-zinc-950 text-xs font-black px-2 py-1 rounded-lg transition" title="???? ?????">+1</button>
+            ${noShows > 0 ? `<button type="button" class="btn-noshow-sub bg-zinc-800 hover:bg-emerald-500 text-zinc-300 hover:text-zinc-950 text-xs font-bold px-2 py-1 rounded-lg transition" title="??? ?????">-1</button>` : ""}
           </div>
         </div>
 
         <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 flex items-center justify-between">
           <div>
-            <div class="text-[10px] text-zinc-400">איחורים</div>
+            <div class="text-[10px] text-zinc-400">???????</div>
             <div class="text-sm font-black ${lates > 0 ? "text-yellow-400" : "text-zinc-300"}">${lates}</div>
           </div>
           <div class="flex items-center gap-1">
-            <button class="btn-late-add bg-yellow-500/20 hover:bg-yellow-500 text-yellow-300 hover:text-zinc-950 text-xs font-black px-2 py-1 rounded-lg transition" title="רשום איחור">+1</button>
-            ${lates > 0 ? `<button class="btn-late-sub bg-zinc-800 hover:bg-emerald-500 text-zinc-300 hover:text-zinc-950 text-xs font-bold px-2 py-1 rounded-lg transition" title="בטל איחור">-1</button>` : ""}
+            <button type="button" class="btn-late-add bg-yellow-500/20 hover:bg-yellow-500 text-yellow-300 hover:text-zinc-950 text-xs font-black px-2 py-1 rounded-lg transition" title="???? ?????">+1</button>
+            ${lates > 0 ? `<button type="button" class="btn-late-sub bg-zinc-800 hover:bg-emerald-500 text-zinc-300 hover:text-zinc-950 text-xs font-bold px-2 py-1 rounded-lg transition" title="??? ?????">-1</button>` : ""}
           </div>
         </div>
       </div>
 
       <!-- Ban / Unban Button -->
       <div class="pt-2 border-t border-zinc-800 flex justify-end">
-        <button class="btn-ban-toggle w-full py-2 rounded-xl text-xs font-black transition ${
+        <button type="button" class="btn-ban-toggle w-full py-2 rounded-xl text-xs font-black transition ${
           isBanned
             ? "bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-zinc-950 border border-emerald-500/40"
             : "bg-rose-500/15 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/40"
         }">
-          ${isBanned ? "�?התר חסימה (Unban)" : "🚫 תן באן (חסום לקוח)"}
+          ${isBanned ? "? ??? ????? (Unban)" : "?? ?? ??? (???? ????)"}
         </button>
       </div>
     `;
@@ -344,7 +360,6 @@ function renderClientsDirectory() {
   });
 }
 
-// Show compact warning badges on regular appointment cards (without cluttering buttons)
 function decorateAppointmentCardsWithBadges() {
   const listEl = document.getElementById("adminAppointmentsList");
   if (!listEl) return;
@@ -373,13 +388,47 @@ function decorateAppointmentCardsWithBadges() {
     }
 
     badgeWrap.innerHTML = `
-      ${noShows > 0 ? `<span class="bg-orange-500/20 border border-orange-500/40 text-orange-300 text-[10px] font-black px-2 py-0.5 rounded-md">⚠️ הבריז ${noShows}</span>` : ""}
-      ${lates > 0 ? `<span class="bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 text-[10px] font-black px-2 py-0.5 rounded-md">�?איחר ${lates}</span>` : ""}
+      ${noShows > 0 ? `<span class="bg-orange-500/20 border border-orange-500/40 text-orange-300 text-[10px] font-black px-2 py-0.5 rounded-md">?? ????? ${noShows}</span>` : ""}
+      ${lates > 0 ? `<span class="bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 text-[10px] font-black px-2 py-0.5 rounded-md">? ???? ${lates}</span>` : ""}
     `;
   });
 }
 
-mountClientsTabUI();
+function highlightTodayInAdminCalendar() {
+  const today = new Date();
+  const todayDayStr = String(today.getDate());
+  const monthsHe = ["?????", "??????", "???", "?????", "???", "????", "????", "??????", "??????", "???????", "??????", "?????"];
+  const expectedTitle = `${monthsHe[today.getMonth()]} ${today.getFullYear()}`;
+
+  const tab = document.getElementById("appointmentsTab");
+  if (!tab) return;
+
+  const heading = Array.from(tab.querySelectorAll("h2, h3, div, span")).find(
+    (el) => el.children.length === 0 && (el.textContent || "").trim() === expectedTitle
+  );
+  if (!heading) return;
+
+  const calSection = heading.closest("section, div.bg-zinc-900") || tab;
+  const dayButtons = Array.from(calSection.querySelectorAll("button")).filter((btn) => {
+    const firstLine = (btn.textContent || "").trim().split(/\s+/)[0];
+    return firstLine === todayDayStr && !btn.disabled;
+  });
+
+  dayButtons.forEach((btn) => {
+    const isCurrentlySelected = btn.classList.contains("bg-emerald-500");
+    if (!isCurrentlySelected) {
+      btn.classList.remove("bg-zinc-950", "border-zinc-800", "text-zinc-200", "text-white");
+      btn.classList.add("bg-emerald-400/25", "border-emerald-400", "text-emerald-200", "font-black", "shadow-md", "shadow-emerald-400/15");
+    }
+  });
+}
+
+// Mount after DOM/login renders
+setTimeout(mountClientsTabUI, 300);
+const bodyObs = new MutationObserver(() => {
+  if (!document.getElementById("tabBtnClients")) mountClientsTabUI();
+});
+bodyObs.observe(document.body, { childList: true, subtree: true });
 
 onSnapshot(collection(db, "appointments"), (snap) => {
   allAppointments = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -417,37 +466,6 @@ const appListNode = document.getElementById("adminAppointmentsList");
 if (appListNode) {
   const obs = new MutationObserver(() => decorateAppointmentCardsWithBadges());
   obs.observe(appListNode, { childList: true });
-}
-// Highlight today's cell in light green inside the Admin calendar automatically
-function highlightTodayInAdminCalendar() {
-  const today = new Date();
-  const todayDayStr = String(today.getDate());
-  const monthsHe = ["?????", "??????", "???", "?????", "???", "????", "????", "??????", "??????", "???????", "??????", "?????"];
-  const expectedTitle = `${monthsHe[today.getMonth()]} ${today.getFullYear()}`;
-
-  const tab = document.getElementById("appointmentsTab");
-  if (!tab) return;
-
-  // Check if current displayed month/year matches today's month/year
-  const heading = Array.from(tab.querySelectorAll("h2, h3, div, span")).find(
-    (el) => el.children.length === 0 && (el.textContent || "").trim() === expectedTitle
-  );
-  if (!heading) return;
-
-  // Find calendar grid container next to the heading
-  const calSection = heading.closest("section, div.bg-zinc-900") || tab;
-  const dayButtons = Array.from(calSection.querySelectorAll("button")).filter((btn) => {
-    const firstLine = (btn.textContent || "").trim().split(/\s+/)[0];
-    return firstLine === todayDayStr && !btn.disabled;
-  });
-
-  dayButtons.forEach((btn) => {
-    const isCurrentlySelected = btn.classList.contains("bg-emerald-500");
-    if (!isCurrentlySelected) {
-      btn.classList.remove("bg-zinc-950", "border-zinc-800", "text-zinc-200", "text-white");
-      btn.classList.add("bg-emerald-400/25", "border-emerald-400", "text-emerald-200", "font-black", "shadow-md", "shadow-emerald-400/15");
-    }
-  });
 }
 
 const adminTabNode = document.getElementById("appointmentsTab");
