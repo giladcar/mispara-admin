@@ -108,7 +108,7 @@ function updateStatsNumbers() {
   let monthRev = 0;
 
   for (const item of allAppointments) {
-    if (!item.date) continue;
+    if (!item.date || item.status === "canceled_by_admin") continue;
     const price = getAppointmentPrice(item);
 
     if (item.date === todayStr) {
@@ -150,6 +150,8 @@ onSnapshot(doc(db, "config", "settings"), (snap) => {
 });
 
 onSnapshot(collection(db, "appointments"), (snapshot) => {
-  allAppointments = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+  allAppointments = snapshot.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((a) => a.status !== "canceled_by_admin");
   updateStatsNumbers();
 });
