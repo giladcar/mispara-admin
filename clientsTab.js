@@ -22,6 +22,51 @@ const firebaseConfig = {
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// Unicode-safe Hebrew strings (immune to Notepad++ ANSI/UTF-8 encoding issues)
+const TXT = {
+  tabBtn: "\uD83D\uDC65 \u05DC\u05E7\u05D5\u05D7\u05D5\u05EA \u05D5\u05E4\u05E8\u05D5\u05E4\u05D9\u05DC\u05D9\u05DD",
+  title: "\uD83D\uDC65 \u05E4\u05E8\u05D5\u05E4\u05D9\u05DC\u05D9\u05DD \u05D5\u05D4\u05D9\u05E1\u05D8\u05D5\u05E8\u05D9\u05D9\u05EA \u05DC\u05E7\u05D5\u05D7\u05D5\u05EA",
+  subtitle: "\u05E1\u05D9\u05DB\u05D5\u05DD \u05D4\u05D6\u05DE\u05E0\u05D5\u05EA \u05DC\u05E4\u05D9 \u05E1\u05D5\u05D2 \u05D8\u05D9\u05E4\u05D5\u05DC, \u05E0\u05D9\u05D4\u05D5\u05DC \u05D4\u05D1\u05E8\u05D6\u05D5\u05EA, \u05D0\u05D9\u05D7\u05D5\u05E8\u05D9\u05DD \u05D5\u05D7\u05E1\u05D9\u05DE\u05D5\u05EA (Ban / Unban)",
+  clientsCount: "\u05DC\u05E7\u05D5\u05D7\u05D5\u05EA",
+  searchPlaceholder: "\uD83D\uDD0D \u05D7\u05E4\u05E9 \u05DC\u05E7\u05D5\u05D7 \u05DC\u05E4\u05D9 \u05E9\u05DD, \u05D8\u05DC\u05E4\u05D5\u05DF \u05D0\u05D5 \u05D0\u05D9\u05DE\u05D9\u05D9\u05DC...",
+  noClientsFound: "\u05DC\u05D0 \u05E0\u05DE\u05E6\u05D0\u05D5 \u05E4\u05E8\u05D5\u05E4\u05D9\u05DC\u05D9 \u05DC\u05E7\u05D5\u05D7\u05D5\u05EA \u05EA\u05D5\u05D0\u05DE\u05D9\u05DD",
+  bannedBadge: "\u05D7\u05E1\u05D5\u05DD \uD83D\uDEAB",
+  totalLabel: "\u05E1\u05D4\"\u05DB",
+  noOrdersYet: "\u05D8\u05E8\u05DD \u05D4\u05D5\u05E9\u05DC\u05DE\u05D5 \u05D4\u05D6\u05DE\u05E0\u05D5\u05EA",
+  noShowsLabel: "\u05D4\u05D1\u05E8\u05D6\u05D5\u05EA (\u05DC\u05D0 \u05D4\u05D2\u05D9\u05E2)",
+  addNoShowTitle: "\u05D4\u05D5\u05E1\u05E3 \u05D4\u05D1\u05E8\u05D6\u05D4",
+  subNoShowTitle: "\u05D1\u05D8\u05DC \u05D4\u05D1\u05E8\u05D6\u05D4",
+  latesLabel: "\u05D0\u05D9\u05D7\u05D5\u05E8\u05D9\u05DD",
+  addLateTitle: "\u05E8\u05E9\u05D5\u05DD \u05D0\u05D9\u05D7\u05D5\u05E8",
+  subLateTitle: "\u05D1\u05D8\u05DC \u05D0\u05D9\u05D7\u05D5\u05E8",
+  unbanBtn: "\u2705 \u05D4\u05EA\u05E8 \u05D7\u05E1\u05D9\u05DE\u05D4 (Unban)",
+  banBtn: "\uD83D\uDEAB \u05EA\u05DF \u05D1\u05D0\u05DF (\u05D7\u05E1\u05D5\u05DD \u05DC\u05E7\u05D5\u05D7)",
+  defaultService: "\u05EA\u05E1\u05E4\u05D5\u05E8\u05EA",
+  confirmUnban: "\u05DC\u05D4\u05EA\u05D9\u05E8 \u05D7\u05E1\u05D9\u05DE\u05D4 (Unban) \u05E2\u05D1\u05D5\u05E8",
+  unbanSuccess: "\u05D4\u05D7\u05E1\u05D9\u05DE\u05D4 \u05D4\u05D5\u05E1\u05E8\u05D4 \u05E2\u05D1\u05D5\u05E8",
+  banReasonPrompt: "\u05E1\u05D9\u05D1\u05EA \u05D4\u05D7\u05E1\u05D9\u05DE\u05D4 \u05E2\u05D1\u05D5\u05E8",
+  defaultBanReason: "\u05D4\u05D1\u05E8\u05D6\u05D5\u05EA \u05D7\u05D5\u05D6\u05E8\u05D5\u05EA / \u05D4\u05E4\u05E8\u05EA \u05E0\u05D4\u05DC\u05D9\u05DD",
+  banSuccessPrefix: "\u05D4\u05DC\u05E7\u05D5\u05D7",
+  banSuccessSuffix: "\u05E0\u05D7\u05E1\u05DD \u05D1\u05D4\u05E6\u05DC\u05D7\u05D4.",
+  badgeNoShow: "\u26A0\uFE0F \u05D4\u05D1\u05E8\u05D9\u05D6",
+  badgeLate: "\u23F0 \u05D0\u05D9\u05D7\u05E8",
+  settingsKeyword: "\u05D4\u05D2\u05D3\u05E8\u05D5\u05EA",
+  months: [
+    "\u05D9\u05E0\u05D5\u05D0\u05E8",
+    "\u05E4\u05D1\u05E8\u05D5\u05D0\u05E8",
+    "\u05DE\u05E8\u05E5",
+    "\u05D0\u05E4\u05E8\u05D9\u05DC",
+    "\u05DE\u05D0\u05D9",
+    "\u05D9\u05D5\u05E0\u05D9",
+    "\u05D9\u05D5\u05DC\u05D9",
+    "\u05D0\u05D5\u05D2\u05D5\u05E1\u05D8",
+    "\u05E1\u05E4\u05D8\u05DE\u05D1\u05E8",
+    "\u05D0\u05D5\u05E7\u05D8\u05D5\u05D1\u05E8",
+    "\u05E0\u05D5\u05D1\u05DE\u05D1\u05E8",
+    "\u05D3\u05E6\u05DE\u05D1\u05E8"
+  ]
+};
+
 let allAppointments = [];
 let savedProfiles = {};
 let blockedDocs = [];
@@ -40,84 +85,128 @@ function getClientKey(email, phone) {
   return (phone || "").replace(/\D/g, "");
 }
 
+function findHeaderTabsBar() {
+  const header = document.querySelector("header");
+  if (!header) return null;
+  const buttons = Array.from(header.querySelectorAll("button"));
+  const settingsBtn = buttons.find((b) => (b.textContent || "").includes(TXT.settingsKeyword));
+  return settingsBtn ? settingsBtn.parentElement : null;
+}
+
 function setClientsTabVisibility(active) {
   isClientsTabActive = active;
   const clientsPanel = document.getElementById("clientsProfilesTab");
   const appointmentsTab = document.getElementById("appointmentsTab");
   const settingsTab = document.getElementById("settingsTab");
   const tabBtn = document.getElementById("tabBtnClients");
+  const tabsBar = findHeaderTabsBar();
+
+  // Also hide/show any extra tab containers inside <main>
+  const mainEl = document.querySelector("main");
+  const siblingTabs = mainEl
+    ? Array.from(mainEl.children).filter((el) => el.id && el.id.endsWith("Tab") && el.id !== "clientsProfilesTab")
+    : [];
 
   if (active) {
-    if (appointmentsTab) appointmentsTab.style.display = "none";
-    if (settingsTab) settingsTab.style.display = "none";
+    if (appointmentsTab) appointmentsTab.classList.add("hidden");
+    if (settingsTab) settingsTab.classList.add("hidden");
+    siblingTabs.forEach((el) => el.classList.add("hidden"));
+
     if (clientsPanel) {
       clientsPanel.classList.remove("hidden");
-      clientsPanel.style.display = "block";
     }
-    if (tabBtn) {
-      tabBtn.textContent = "?? ???? ????? ????????";
-      tabBtn.style.backgroundColor = "#f59e0b";
-      tabBtn.style.color = "#09090b";
+
+    if (tabsBar) {
+      Array.from(tabsBar.querySelectorAll("button")).forEach((b) => {
+        if (b.id === "tabBtnClients") {
+          b.className = "px-3.5 py-2 rounded-xl text-xs font-black bg-emerald-500 text-zinc-950 shadow-lg shadow-emerald-500/20 transition cursor-pointer";
+        } else {
+          b.classList.remove("bg-emerald-500", "text-zinc-950", "font-black", "shadow-lg", "shadow-emerald-500/20");
+          b.classList.add("bg-zinc-800", "text-zinc-300", "font-bold");
+        }
+      });
     }
     renderClientsDirectory();
   } else {
     if (clientsPanel) {
       clientsPanel.classList.add("hidden");
-      clientsPanel.style.display = "none";
     }
-    if (appointmentsTab) appointmentsTab.style.display = "";
-    if (settingsTab) settingsTab.style.display = "";
     if (tabBtn) {
-      tabBtn.textContent = "?? ?????? ?????????";
-      tabBtn.style.backgroundColor = "#10b981";
-      tabBtn.style.color = "#09090b";
+      tabBtn.className = "px-3.5 py-2 rounded-xl text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition cursor-pointer";
     }
   }
 }
 
 function mountClientsTabUI() {
-  if (!document.getElementById("tabBtnClients")) {
+  const tabsBar = findHeaderTabsBar();
+
+  // Remove old floating button if cached
+  const oldFloating = document.getElementById("tabBtnClients");
+  if (oldFloating && oldFloating.style.position === "fixed") {
+    oldFloating.remove();
+  }
+
+  if (tabsBar && !document.getElementById("tabBtnClients")) {
     const btn = document.createElement("button");
     btn.id = "tabBtnClients";
     btn.type = "button";
-    btn.textContent = "?? ?????? ?????????";
-    btn.style.cssText =
-      "position: fixed; bottom: 20px; left: 20px; z-index: 99990; background-color: #10b981; color: #09090b; font-weight: 900; font-size: 14px; padding: 12px 18px; border-radius: 14px; border: 2px solid #34d399; box-shadow: 0 10px 25px rgba(0,0,0,0.6); cursor: pointer; font-family: inherit;";
-    btn.onclick = () => setClientsTabVisibility(!isClientsTabActive);
-    document.body.appendChild(btn);
+    btn.textContent = TXT.tabBtn;
+    btn.className = "px-3.5 py-2 rounded-xl text-xs font-bold bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition cursor-pointer";
+
+    // Insert right before the Logout ("?????") button so it sits neatly next to "?????? ????????"
+    const buttons = Array.from(tabsBar.querySelectorAll("button"));
+    const logoutBtn = buttons[buttons.length - 1];
+    if (logoutBtn) {
+      tabsBar.insertBefore(btn, logoutBtn);
+    } else {
+      tabsBar.appendChild(btn);
+    }
+
+    btn.addEventListener("click", () => setClientsTabVisibility(true));
+
+    // When user clicks any existing top tab ("?? ??????", "???? ???????", "?????? ????????"), hide Clients panel
+    buttons.forEach((otherBtn) => {
+      if (otherBtn.id === "tabBtnClients" || otherBtn === logoutBtn) return;
+      otherBtn.addEventListener("click", () => {
+        setClientsTabVisibility(false);
+      });
+    });
   }
 
   if (!document.getElementById("clientsProfilesTab")) {
     const panel = document.createElement("div");
     panel.id = "clientsProfilesTab";
     panel.dir = "rtl";
-    panel.className = "hidden max-w-4xl mx-auto px-4 py-6 space-y-4 pb-24";
+    panel.className = "hidden space-y-4";
     panel.innerHTML = `
       <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-5 space-y-3">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h2 class="text-lg font-black text-white">?? ???????? ?????????? ??????</h2>
-            <p class="text-xs text-zinc-400">????? ?????? ??? ??? ?????, ????? ??????, ??????? ??????? (Ban / Unban)</p>
+            <h2 class="text-lg font-black text-white">${TXT.title}</h2>
+            <p class="text-xs text-zinc-400">${TXT.subtitle}</p>
           </div>
           <span id="totalClientsBadge" class="bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-black px-3 py-1.5 rounded-xl self-start sm:self-auto">
-            0 ??????
+            0 ${TXT.clientsCount}
           </span>
         </div>
         <input
           type="text"
           id="clientsDirectorySearch"
-          placeholder="?? ??? ???? ??? ??, ????? ?? ??????..."
+          placeholder="${TXT.searchPlaceholder}"
           class="w-full bg-zinc-950 border border-zinc-700 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none"
         />
       </div>
       <div id="clientsDirectoryList" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
     `;
 
+    const mainEl = document.querySelector("main");
     const appointmentsTab = document.getElementById("appointmentsTab");
     const settingsTab = document.getElementById("settingsTab");
     const anchor = settingsTab || appointmentsTab;
     if (anchor && anchor.parentElement) {
       anchor.insertAdjacentElement("afterend", panel);
+    } else if (mainEl) {
+      mainEl.appendChild(panel);
     } else {
       document.body.appendChild(panel);
     }
@@ -149,22 +238,22 @@ async function handleBanToggle(client) {
   });
 
   if (existingBlocks.length > 0) {
-    if (!confirm(`????? ????? (Unban) ???? ${client.fullName}?`)) return;
+    if (!confirm(`${TXT.confirmUnban} ${client.fullName}?`)) return;
     for (const blk of existingBlocks) {
       await deleteDoc(doc(db, "blocked_users", blk.id));
     }
-    alert(`?????? ????? ???? ${client.fullName} ?`);
+    alert(`${TXT.unbanSuccess} ${client.fullName} \u2713`);
     return;
   }
 
-  const reason = prompt(`???? ?????? ???? ${client.fullName}:`, "?????? ?????? / ???? ?????");
+  const reason = prompt(`${TXT.banReasonPrompt} ${client.fullName}:`, TXT.defaultBanReason);
   if (reason === null) return;
 
   await addDoc(collection(db, "blocked_users"), {
     email: client.email || "",
     phone: client.phone || "",
     fullName: client.fullName,
-    reason: reason.trim() || "???? ???? ??????",
+    reason: reason.trim() || TXT.defaultBanReason,
     blockedAt: Date.now()
   });
 
@@ -183,7 +272,7 @@ async function handleBanToggle(client) {
     });
   }
 
-  alert(`????? ${client.fullName} ???? ??????.`);
+  alert(`${TXT.banSuccessPrefix} ${client.fullName} ${TXT.banSuccessSuffix}`);
 }
 
 function buildClientsMap() {
@@ -230,7 +319,7 @@ function buildClientsMap() {
     }
 
     entry.totalBookings += 1;
-    const srv = app.serviceName || "??????";
+    const srv = app.serviceName || TXT.defaultService;
     entry.serviceBreakdown[srv] = (entry.serviceBreakdown[srv] || 0) + 1;
   });
 
@@ -253,10 +342,10 @@ function renderClientsDirectory() {
     );
   }
 
-  if (badgeEl) badgeEl.textContent = `${clients.length} ??????`;
+  if (badgeEl) badgeEl.textContent = `${clients.length} ${TXT.clientsCount}`;
 
   if (clients.length === 0) {
-    listEl.innerHTML = `<div class="col-span-full text-center py-10 text-zinc-500 text-xs bg-zinc-900 border border-zinc-800 rounded-2xl">?? ????? ??????? ?????? ??????</div>`;
+    listEl.innerHTML = `<div class="col-span-full text-center py-10 text-zinc-500 text-xs bg-zinc-900 border border-zinc-800 rounded-2xl">${TXT.noClientsFound}</div>`;
     return;
   }
 
@@ -285,39 +374,39 @@ function renderClientsDirectory() {
         <div>
           <div class="flex items-center gap-2 flex-wrap">
             <h3 class="text-base font-black text-white">${c.fullName}</h3>
-            ${isBanned ? `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[10px] font-black px-2 py-0.5 rounded-md">???? ??</span>` : ""}
+            ${isBanned ? `<span class="bg-rose-500/20 text-rose-400 border border-rose-500/40 text-[10px] font-black px-2 py-0.5 rounded-md">${TXT.bannedBadge}</span>` : ""}
           </div>
-          <div class="text-xs text-zinc-400 mt-0.5" dir="ltr">${c.phone || ""} ${c.email ? `? ${c.email}` : ""}</div>
+          <div class="text-xs text-zinc-400 mt-0.5" dir="ltr">${c.phone || ""} ${c.email ? `\u2022 ${c.email}` : ""}</div>
         </div>
         <div class="bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-black px-3 py-1 rounded-xl shrink-0">
-          ??"?: ${c.totalBookings}
+          ${TXT.totalLabel}: ${c.totalBookings}
         </div>
       </div>
 
       <div class="flex flex-wrap gap-1.5">
-        ${servicesTags || `<span class="text-[11px] text-zinc-500">??? ?????? ??????</span>`}
+        ${servicesTags || `<span class="text-[11px] text-zinc-500">${TXT.noOrdersYet}</span>`}
       </div>
 
       <div class="grid grid-cols-2 gap-2 pt-1">
         <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 flex items-center justify-between">
           <div>
-            <div class="text-[10px] text-zinc-400">?????? (?? ????)</div>
+            <div class="text-[10px] text-zinc-400">${TXT.noShowsLabel}</div>
             <div class="text-sm font-black ${noShows > 0 ? "text-orange-400" : "text-zinc-300"}">${noShows}</div>
           </div>
           <div class="flex items-center gap-1">
-            <button type="button" class="btn-noshow-add bg-orange-500/20 hover:bg-orange-500 text-orange-300 hover:text-zinc-950 text-xs font-black px-2 py-1 rounded-lg transition" title="???? ?????">+1</button>
-            ${noShows > 0 ? `<button type="button" class="btn-noshow-sub bg-zinc-800 hover:bg-emerald-500 text-zinc-300 hover:text-zinc-950 text-xs font-bold px-2 py-1 rounded-lg transition" title="??? ?????">-1</button>` : ""}
+            <button type="button" class="btn-noshow-add bg-orange-500/20 hover:bg-orange-500 text-orange-300 hover:text-zinc-950 text-xs font-black px-2 py-1 rounded-lg transition" title="${TXT.addNoShowTitle}">+1</button>
+            ${noShows > 0 ? `<button type="button" class="btn-noshow-sub bg-zinc-800 hover:bg-emerald-500 text-zinc-300 hover:text-zinc-950 text-xs font-bold px-2 py-1 rounded-lg transition" title="${TXT.subNoShowTitle}">-1</button>` : ""}
           </div>
         </div>
 
         <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-2.5 flex items-center justify-between">
           <div>
-            <div class="text-[10px] text-zinc-400">???????</div>
+            <div class="text-[10px] text-zinc-400">${TXT.latesLabel}</div>
             <div class="text-sm font-black ${lates > 0 ? "text-yellow-400" : "text-zinc-300"}">${lates}</div>
           </div>
           <div class="flex items-center gap-1">
-            <button type="button" class="btn-late-add bg-yellow-500/20 hover:bg-yellow-500 text-yellow-300 hover:text-zinc-950 text-xs font-black px-2 py-1 rounded-lg transition" title="???? ?????">+1</button>
-            ${lates > 0 ? `<button type="button" class="btn-late-sub bg-zinc-800 hover:bg-emerald-500 text-zinc-300 hover:text-zinc-950 text-xs font-bold px-2 py-1 rounded-lg transition" title="??? ?????">-1</button>` : ""}
+            <button type="button" class="btn-late-add bg-yellow-500/20 hover:bg-yellow-500 text-yellow-300 hover:text-zinc-950 text-xs font-black px-2 py-1 rounded-lg transition" title="${TXT.addLateTitle}">+1</button>
+            ${lates > 0 ? `<button type="button" class="btn-late-sub bg-zinc-800 hover:bg-emerald-500 text-zinc-300 hover:text-zinc-950 text-xs font-bold px-2 py-1 rounded-lg transition" title="${TXT.subLateTitle}">-1</button>` : ""}
           </div>
         </div>
       </div>
@@ -328,7 +417,7 @@ function renderClientsDirectory() {
             ? "bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-zinc-950 border border-emerald-500/40"
             : "bg-rose-500/15 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/40"
         }">
-          ${isBanned ? "? ??? ????? (Unban)" : "?? ?? ??? (???? ????)"}
+          ${isBanned ? TXT.unbanBtn : TXT.banBtn}
         </button>
       </div>
     `;
@@ -375,8 +464,8 @@ function decorateAppointmentCardsWithBadges() {
     }
 
     badgeWrap.innerHTML = `
-      ${noShows > 0 ? `<span class="bg-orange-500/20 border border-orange-500/40 text-orange-300 text-[10px] font-black px-2 py-0.5 rounded-md">?? ????? ${noShows}</span>` : ""}
-      ${lates > 0 ? `<span class="bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 text-[10px] font-black px-2 py-0.5 rounded-md">? ???? ${lates}</span>` : ""}
+      ${noShows > 0 ? `<span class="bg-orange-500/20 border border-orange-500/40 text-orange-300 text-[10px] font-black px-2 py-0.5 rounded-md">${TXT.badgeNoShow} ${noShows}</span>` : ""}
+      ${lates > 0 ? `<span class="bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 text-[10px] font-black px-2 py-0.5 rounded-md">${TXT.badgeLate} ${lates}</span>` : ""}
     `;
   });
 }
@@ -384,8 +473,7 @@ function decorateAppointmentCardsWithBadges() {
 function highlightTodayInAdminCalendar() {
   const today = new Date();
   const todayDayStr = String(today.getDate());
-  const monthsHe = ["?????", "??????", "???", "?????", "???", "????", "????", "??????", "??????", "???????", "??????", "?????"];
-  const expectedTitle = `${monthsHe[today.getMonth()]} ${today.getFullYear()}`;
+  const expectedTitle = `${TXT.months[today.getMonth()]} ${today.getFullYear()}`;
 
   const tab = document.getElementById("appointmentsTab");
   if (!tab) return;
